@@ -775,6 +775,11 @@ input[type="range"]::-moz-range-thumb {
   display: grid;
   align-content: center;
   gap: 18px;
+  width: 100%;
+}
+
+.landing-hero__copy > * {
+  width: min(100%, 36rem);
 }
 
 .landing-kicker,
@@ -794,13 +799,12 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .landing-copy {
-  max-width: 36ch;
+  max-width: 34ch;
   font-size: 1.05rem;
   color: var(--color-text-muted);
 }
 
 .landing-encouragement {
-  max-width: 38rem;
   display: grid;
   gap: 8px;
   padding: 14px 16px;
@@ -832,6 +836,7 @@ input[type="range"]::-moz-range-thumb {
   flex-wrap: wrap;
   gap: 12px;
   padding-top: 4px;
+  align-items: center;
 }
 
 .landing-actions__primary {
@@ -1172,6 +1177,10 @@ input[type="range"]::-moz-range-thumb {
   .landing-hero {
     grid-template-columns: 1fr;
     min-height: auto;
+  }
+
+  .landing-hero__copy > * {
+    width: 100%;
   }
 
   .landing-title {
