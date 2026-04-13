@@ -1,0 +1,70 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Inter:wght@400;500&display=swap');
+
+:root {
+  --color-primary: #6b2d5e;
+  --color-primary-light: #c17ba0;
+  --color-accent: #e8c5da;
+  --color-bg: #fdf8fb;
+  --color-surface: #ffffff;
+  --color-text: #2c1a26;
+  --color-text-muted: #8b6980;
+  --color-border: #e8d5e0;
+  --color-success: #2d7a5e;
+  --color-danger: #c0392b;
+  --radius: 12px;
+  --shadow: 0 2px 12px rgba(107, 45, 94, 0.08);
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+h1,
+h2,
+h3 {
+  font-family: 'Cormorant Garamond', serif;
+  color: var(--color-primary);
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font: 16px 'Inter', sans-serif;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 0;
+}
+
+button {
+  background: var(--color-primary);
+  color: #ffffff;
+  padding: 12px 24px;
+  border-radius: var(--radius);
+  font: 500 16px 'Inter', sans-serif;
+  border: none;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #551f4a;
+}
+
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--color-border);
+}
