@@ -161,10 +161,10 @@ function App() {
   )
   const [tourStep, setTourStep] = useState(0)
   const [tourOverlayStyle, setTourOverlayStyle] = useState({
-    panel: null,
     scrim: null,
     spotlight: null,
   })
+  const [tourPanelDock, setTourPanelDock] = useState('onboarding-panel--right')
 
   useEffect(() => {
     if (!showOnboarding) {
@@ -206,7 +206,6 @@ function App() {
 
     function clearOverlay() {
       setTourOverlayStyle({
-        panel: null,
         scrim: null,
         spotlight: null,
       })
@@ -246,57 +245,23 @@ function App() {
           const margin = viewportWidth <= 640 ? 12 : 20
           const padding = viewportWidth <= 640 ? 8 : 12
           const targetRect = targetNode.getBoundingClientRect()
-          const panelRect = panelNode.getBoundingClientRect()
           const computedStyle = window.getComputedStyle(targetNode)
           const borderRadius = computedStyle.borderRadius === '0px' ? '18px' : computedStyle.borderRadius
-          const spaceRight = viewportWidth - targetRect.right - margin
-          const spaceLeft = targetRect.left - margin
-          const spaceAbove = targetRect.top - margin
-          const spaceBelow = viewportHeight - targetRect.bottom - margin
-          const canFitRight = spaceRight >= panelRect.width + gap
-          const canFitLeft = spaceLeft >= panelRect.width + gap
-          const canFitBelow = spaceBelow >= panelRect.height + gap
-          const canFitAbove = spaceAbove >= panelRect.height + gap
-
-          let top = (viewportHeight - panelRect.height) / 2
-          let left = (viewportWidth - panelRect.width) / 2
-
-          if (viewportWidth <= 640) {
-            top = viewportHeight - panelRect.height - margin
-            left = margin
-          } else if (viewportWidth >= 900 && (canFitRight || canFitLeft)) {
-            left = canFitRight
-              ? targetRect.right + gap
-              : Math.max(margin, targetRect.left - panelRect.width - gap)
-            top = Math.min(
-              Math.max(margin, targetRect.top),
-              viewportHeight - panelRect.height - margin,
-            )
-          } else if (canFitBelow || canFitAbove) {
-            top = canFitBelow
-              ? targetRect.bottom + gap
-              : Math.max(margin, targetRect.top - panelRect.height - gap)
-            left = Math.min(
-              Math.max(margin, targetRect.left + targetRect.width / 2 - panelRect.width / 2),
-              viewportWidth - panelRect.width - margin,
-            )
-          } else {
-            top = viewportHeight - panelRect.height - margin
-            left = Math.min(
-              Math.max(margin, targetRect.left + targetRect.width / 2 - panelRect.width / 2),
-              viewportWidth - panelRect.width - margin,
-            )
-          }
+          const targetCenterX = targetRect.left + targetRect.width / 2
 
           const focusX = targetRect.left + targetRect.width / 2
           const focusY = targetRect.top + targetRect.height / 2
           const focusRadius = Math.max(targetRect.width, targetRect.height) / 2 + 44
 
+          setTourPanelDock(
+            viewportWidth <= 640
+              ? 'onboarding-panel--bottom'
+              : targetCenterX > viewportWidth / 2
+                ? 'onboarding-panel--left'
+                : 'onboarding-panel--right',
+          )
+
           setTourOverlayStyle({
-            panel: {
-              top: `${Math.round(top)}px`,
-              left: `${Math.round(left)}px`,
-            },
             scrim: {
               '--tour-focus-x': `${Math.round(focusX)}px`,
               '--tour-focus-y': `${Math.round(focusY)}px`,
@@ -377,8 +342,7 @@ function App() {
           <div className="tour-spotlight" style={tourOverlayStyle.spotlight || undefined} aria-hidden="true" />
           <div
             ref={panelRef}
-            className="onboarding-panel"
-            style={tourOverlayStyle.panel || undefined}
+            className={`onboarding-panel ${tourPanelDock}`}
           >
             <div className="onboarding-orb" aria-hidden="true" />
             <div className="onboarding-progress">

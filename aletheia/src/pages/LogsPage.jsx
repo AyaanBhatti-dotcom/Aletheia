@@ -76,12 +76,13 @@ function LogsPage() {
         <p style={{ color: 'var(--color-text-muted)' }}>Browse your full symptom and cycle history.</p>
       </div>
 
-      {entries.length > 0 ? (
-        <div
-          style={{ display: 'grid', gap: '12px' }}
-          data-tour-target="logs-list"
-          className={isTourOpen && activeTourTarget === 'logs-list' ? 'tour-highlight' : ''}
-        >
+      <div
+        style={{ display: 'grid', gap: '12px' }}
+        data-tour-target="logs-list"
+        className={isTourOpen && activeTourTarget === 'logs-list' ? 'tour-highlight' : ''}
+      >
+        {entries.length > 0 ? (
+          <>
           {entries.map((entry) => (
             <Link
               key={`${entry.type}-${entry.id}`}
@@ -99,12 +100,13 @@ function LogsPage() {
               <p className="log-row__summary">{entry.summary}</p>
             </Link>
           ))}
-        </div>
-      ) : (
-        <div className="card">
-          <p style={{ margin: 0 }}>No logs yet.</p>
-        </div>
-      )}
+          </>
+        ) : (
+          <div className="card">
+            <p style={{ margin: 0 }}>No logs yet.</p>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

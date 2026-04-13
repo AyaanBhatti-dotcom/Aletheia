@@ -85,11 +85,16 @@ function InsightsPage() {
             Patterns discovered from your data.
           </p>
         </div>
-        <div className="card">
+        <div
+          data-tour-target="insights-summary"
+          className={isTourOpen && activeTourTarget === 'insights-summary' ? 'tour-highlight' : ''}
+        >
+          <div className="card">
           <EmptyState
             title="No patterns yet"
             description="Add at least 7 entries to start seeing patterns and summaries here."
           />
+          </div>
         </div>
       </div>
     )
