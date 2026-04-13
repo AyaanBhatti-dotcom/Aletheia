@@ -6,17 +6,17 @@
   --font-display: 'Lora', Georgia, serif;
   --font-body: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
 
-  --color-primary: #B96B52;
-  --color-primary-dark: #9A5540;
-  --color-primary-light: #D9957C;
-  --color-accent: #F5E8E2;
-  --color-accent-mid: #EDD4C8;
-  --color-bg: #FBF4F0;
-  --color-surface: #FFFFFF;
-  --color-surface-raised: #FFF9F6;
-  --color-text: #2A1610;
-  --color-text-muted: #8A6558;
-  --color-border: #EAD2C6;
+  --color-primary: #3F2A56;
+  --color-primary-dark: #2F1F42;
+  --color-primary-light: #5C3D7A;
+  --color-accent: #EFE4B8;
+  --color-accent-mid: #D7C37A;
+  --color-bg: #F6F1E8;
+  --color-surface: #FFFEFC;
+  --color-surface-raised: #FBF7EF;
+  --color-text: #201A2B;
+  --color-text-muted: #655B74;
+  --color-border: #DDD3E4;
   --color-success: #3D7A5C;
   --color-success-bg: #EBF5EF;
   --color-danger: #B84040;
@@ -29,10 +29,10 @@
   --radius-xl: 24px;
   --radius-pill: 9999px;
 
-  --shadow-xs: 0 1px 4px rgba(185, 107, 82, 0.06);
-  --shadow: 0 2px 16px rgba(185, 107, 82, 0.09);
-  --shadow-md: 0 5px 28px rgba(185, 107, 82, 0.12);
-  --shadow-lg: 0 12px 52px rgba(185, 107, 82, 0.16);
+  --shadow-xs: 0 1px 4px rgba(63, 42, 86, 0.08);
+  --shadow: 0 2px 16px rgba(63, 42, 86, 0.11);
+  --shadow-md: 0 5px 28px rgba(63, 42, 86, 0.14);
+  --shadow-lg: 0 12px 52px rgba(63, 42, 86, 0.2);
 
   --ease: 180ms ease;
   --ease-spring: 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -91,11 +91,11 @@ textarea:focus,
 select:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(185, 107, 82, 0.14);
+  box-shadow: 0 0 0 3px rgba(63, 42, 86, 0.14);
 }
 
 select {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%238A6558' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23655B74' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 14px center;
   padding-right: 44px;
@@ -131,7 +131,7 @@ button {
   width: 100%;
   font: 600 17px var(--font-body);
   letter-spacing: 0.01em;
-  box-shadow: 0 4px 18px rgba(185, 107, 82, 0.34);
+  box-shadow: 0 4px 18px rgba(63, 42, 86, 0.34);
   min-height: 56px;
   border: none;
   cursor: pointer;
@@ -142,13 +142,13 @@ button {
 
 .btn-primary:hover {
   background: var(--color-primary-dark);
-  box-shadow: 0 6px 24px rgba(185, 107, 82, 0.42);
+  box-shadow: 0 6px 24px rgba(63, 42, 86, 0.42);
   transform: translateY(-1px);
 }
 
 .btn-primary:active {
   transform: translateY(1px);
-  box-shadow: 0 2px 8px rgba(185, 107, 82, 0.22);
+  box-shadow: 0 2px 8px rgba(63, 42, 86, 0.24);
 }
 
 .btn-secondary {
@@ -238,7 +238,7 @@ button {
   background: var(--color-primary);
   border-color: var(--color-primary);
   color: #fff;
-  box-shadow: 0 2px 10px rgba(185, 107, 82, 0.28);
+  box-shadow: 0 2px 10px rgba(63, 42, 86, 0.28);
 }
 
 .pill--active:hover {
@@ -291,14 +291,14 @@ input[type="range"]::-webkit-slider-thumb {
   border-radius: 50%;
   background: var(--color-surface);
   border: 2.5px solid var(--color-primary);
-  box-shadow: 0 2px 10px rgba(185, 107, 82, 0.32);
+  box-shadow: 0 2px 10px rgba(63, 42, 86, 0.32);
   cursor: pointer;
   transition: transform var(--ease-spring), box-shadow var(--ease);
 }
 
 input[type="range"]::-webkit-slider-thumb:active {
   transform: scale(1.18);
-  box-shadow: 0 4px 16px rgba(185, 107, 82, 0.44);
+  box-shadow: 0 4px 16px rgba(63, 42, 86, 0.44);
 }
 
 input[type="range"]::-moz-range-thumb {
@@ -307,7 +307,7 @@ input[type="range"]::-moz-range-thumb {
   border-radius: 50%;
   background: var(--color-surface);
   border: 2.5px solid var(--color-primary);
-  box-shadow: 0 2px 10px rgba(185, 107, 82, 0.32);
+  box-shadow: 0 2px 10px rgba(63, 42, 86, 0.32);
   cursor: pointer;
 }
 
@@ -560,7 +560,7 @@ input[type="range"]::-moz-range-thumb {
   padding: 20px;
   border-radius: var(--radius-xl);
   background:
-    radial-gradient(circle at top right, rgba(217, 149, 124, 0.18), transparent 36%),
+    radial-gradient(circle at top right, rgba(215, 195, 122, 0.22), transparent 36%),
     linear-gradient(180deg, var(--color-surface) 0%, var(--color-surface-raised) 100%);
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow);
@@ -645,6 +645,7 @@ input[type="range"]::-moz-range-thumb {
   flex-direction: column;
   justify-content: space-between;
   gap: 10px;
+  min-width: 0;
   transition: transform var(--ease), border-color var(--ease), box-shadow var(--ease), background var(--ease);
 }
 
@@ -660,7 +661,7 @@ input[type="range"]::-moz-range-thumb {
 
 .cycle-calendar__day--selected {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px rgba(185, 107, 82, 0.16);
+  box-shadow: 0 0 0 2px rgba(63, 42, 86, 0.2);
 }
 
 .cycle-calendar__day--today .cycle-calendar__day-number {
@@ -677,12 +678,24 @@ input[type="range"]::-moz-range-thumb {
   font-size: 11px;
   font-weight: 700;
   text-transform: capitalize;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .cycle-calendar__day-cycle {
   font-size: 11px;
   color: var(--color-text-muted);
   font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cycle-calendar__day-meta-compact {
+  display: none;
 }
 
 .cycle-calendar__day--none,
@@ -692,27 +705,27 @@ input[type="range"]::-moz-range-thumb {
 
 .cycle-calendar__day--spotting,
 .tracker-calendar-legend__swatch.cycle-calendar__day--spotting {
-  background: #f9ebe5;
+  background: #F5EED6;
 }
 
 .cycle-calendar__day--light,
 .tracker-calendar-legend__swatch.cycle-calendar__day--light {
-  background: #f4ddd2;
+  background: #EEE3BA;
 }
 
 .cycle-calendar__day--moderate,
 .tracker-calendar-legend__swatch.cycle-calendar__day--moderate {
-  background: #edc0ac;
+  background: #E2D094;
 }
 
 .cycle-calendar__day--heavy,
 .tracker-calendar-legend__swatch.cycle-calendar__day--heavy {
-  background: #dea087;
+  background: #C8B075;
 }
 
 .cycle-calendar__day--very-heavy,
 .tracker-calendar-legend__swatch.cycle-calendar__day--very-heavy {
-  background: #c97e63;
+  background: #5C3D7A;
   color: #fff;
 }
 
@@ -738,9 +751,9 @@ input[type="range"]::-moz-range-thumb {
   padding: clamp(28px, 4vw, 52px);
   border-radius: 36px;
   background:
-    radial-gradient(circle at top left, rgba(217, 149, 124, 0.28), transparent 28%),
-    radial-gradient(circle at bottom right, rgba(185, 107, 82, 0.14), transparent 32%),
-    linear-gradient(145deg, #fff9f6 0%, #fdf1ea 45%, #fbf4f0 100%);
+    radial-gradient(circle at top left, rgba(215, 195, 122, 0.28), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(63, 42, 86, 0.16), transparent 32%),
+    linear-gradient(145deg, #fffdf7 0%, #f6f0df 45%, #f6f1e8 100%);
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow-lg);
 }
@@ -752,7 +765,7 @@ input[type="range"]::-moz-range-thumb {
   width: 420px;
   height: 420px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(185, 107, 82, 0.14), transparent 62%);
+  background: radial-gradient(circle, rgba(63, 42, 86, 0.16), transparent 62%);
   pointer-events: none;
 }
 
@@ -840,21 +853,21 @@ input[type="range"]::-moz-range-thumb {
 .landing-orbit__ring--outer {
   width: 100%;
   height: 100%;
-  border: 1px solid rgba(185, 107, 82, 0.2);
+  border: 1px solid rgba(63, 42, 86, 0.22);
   animation: landing-float 10s linear infinite;
 }
 
 .landing-orbit__ring--mid {
   width: 72%;
   height: 72%;
-  border: 1px dashed rgba(154, 85, 64, 0.18);
+  border: 1px dashed rgba(215, 195, 122, 0.45);
   animation: landing-float 14s linear infinite reverse;
 }
 
 .landing-orbit__ring--inner {
   width: 42%;
   height: 42%;
-  border: 1px solid rgba(185, 107, 82, 0.28);
+  border: 1px solid rgba(63, 42, 86, 0.32);
   animation: landing-pulse 3.8s ease-in-out infinite;
 }
 
@@ -862,7 +875,7 @@ input[type="range"]::-moz-range-thumb {
   width: 18%;
   height: 18%;
   background: radial-gradient(circle at 35% 35%, var(--color-primary-light), var(--color-primary));
-  box-shadow: 0 0 60px rgba(185, 107, 82, 0.24);
+  box-shadow: 0 0 60px rgba(63, 42, 86, 0.24);
 }
 
 .landing-stats {
@@ -879,7 +892,7 @@ input[type="range"]::-moz-range-thumb {
   border-radius: 22px;
   background: rgba(255, 255, 255, 0.76);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(234, 210, 198, 0.9);
+  border: 1px solid rgba(221, 211, 228, 0.92);
   box-shadow: var(--shadow-md);
   display: grid;
   gap: 6px;
@@ -941,7 +954,7 @@ input[type="range"]::-moz-range-thumb {
   gap: 12px;
   padding: 18px;
   border-radius: 24px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 249, 246, 0.96) 100%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(250, 246, 236, 0.96) 100%);
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow);
   transition: transform var(--ease), box-shadow var(--ease), border-color var(--ease);
@@ -1014,7 +1027,7 @@ input[type="range"]::-moz-range-thumb {
   gap: 16px;
   padding: 18px 20px;
   border-radius: 22px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 249, 246, 1) 100%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(250, 246, 236, 1) 100%);
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow);
   text-decoration: none;
@@ -1101,13 +1114,31 @@ input[type="range"]::-moz-range-thumb {
   }
 
   .cycle-calendar__day {
-    min-height: 82px;
-    padding: 10px 8px;
+    min-height: 76px;
+    padding: 8px 6px;
+    gap: 6px;
+  }
+
+  .cycle-calendar__day-number {
+    font-size: 1.1rem;
   }
 
   .cycle-calendar__day-meta,
   .cycle-calendar__day-cycle {
-    font-size: 10px;
+    font-size: 9px;
+    line-height: 1.15;
+  }
+
+  .cycle-calendar__day-meta-full {
+    display: none;
+  }
+
+  .cycle-calendar__day-meta-compact {
+    display: inline;
+  }
+
+  .cycle-calendar__day-cycle {
+    font-size: 8px;
   }
 
   .landing-hero {
@@ -1149,5 +1180,29 @@ input[type="range"]::-moz-range-thumb {
 
   .log-row__summary {
     text-align: left;
+  }
+}
+
+@media (min-width: 1024px) {
+  .tracker-calendar-shell {
+    gap: 20px;
+    padding: 24px;
+  }
+
+  .tracker-calendar-topline {
+    align-items: end;
+  }
+
+  .tracker-calendar-legend {
+    gap: 12px 18px;
+  }
+
+  .cycle-calendar {
+    gap: 10px;
+  }
+
+  .cycle-calendar__day {
+    min-height: 102px;
+    padding: 14px 12px;
   }
 }

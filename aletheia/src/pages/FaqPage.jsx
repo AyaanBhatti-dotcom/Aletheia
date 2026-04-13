@@ -51,6 +51,51 @@ const faqItems = [
     answer:
       'This question can help guide a discussion about pain management, pelvic floor therapy, hormonal treatment, imaging follow-up, specialist referral, and possible surgical options.',
   },
+  {
+    question: 'Is endometriosis just having a really bad period?',
+    answer:
+      'No. Endometriosis is a chronic, whole-body inflammatory disease where tissue similar to the uterine lining grows outside the uterus. While severe period pain is a common symptom, it is not just "normal" cramping.',
+  },
+  {
+    question: 'Will a regular ultrasound show if I have endometriosis?',
+    answer:
+      'Not always. While ultrasounds and MRIs can show deep nodules or cysts on the ovaries (endometriomas), they frequently cannot see superficial endometriosis. A "clear" scan does not mean you do not have the disease.',
+  },
+  {
+    question: 'Does a hysterectomy or getting pregnant cure endometriosis?',
+    answer:
+      'No, there is currently no cure for endometriosis. Because the disease exists outside the uterus, removing the reproductive organs does not guarantee the disease is gone. Similarly, pregnancy may temporarily suppress symptoms for some, but it is not a cure.',
+  },
+  {
+    question: 'Does the severity of my pain mean my endometriosis is advanced?',
+    answer:
+      'No. The stage of endometriosis (I through IV) describes how far the tissue has spread and how deep it is, but it does not correlate to pain levels. You can have Stage I endometriosis and experience debilitating pain, or Stage IV and have very few symptoms.',
+  },
+  {
+    question: 'Do you primarily use excision or ablation surgery to treat endometriosis?',
+    answer:
+      'This is crucial to ask, as excision (cutting the disease out at the root) is widely considered the gold standard over ablation (burning the surface), which has a higher recurrence rate.',
+  },
+  {
+    question: 'If you suspect endometriosis on my bowel or bladder, will a specialist be present during surgery?',
+    answer:
+      'Endometriosis can cover multiple organs. Asking this ensures your surgeon works with a multidisciplinary team (like a urologist or colorectal surgeon) so all the disease can be removed safely in one surgery.',
+  },
+  {
+    question: 'Do you require patients to try hormonal treatments before agreeing to surgery?',
+    answer:
+      'This helps you understand the doctor\'s treatment philosophy. Some doctors mandate trying birth control or medications like Orilissa first, while others are willing to proceed straight to diagnostic surgery based on your symptoms.',
+  },
+  {
+    question: 'Will you be taking pathology samples during my surgery to confirm the diagnosis?',
+    answer:
+      'Endometriosis can only be 100% definitively diagnosed through a biopsy evaluated by pathology. It is important to confirm that the surgeon will send tissue samples to the lab rather than just diagnosing by sight.',
+  },
+  {
+    question: 'What is your long-term management plan for me after surgery?',
+    answer:
+      'Surgery is only one part of endometriosis care. This question helps establish a plan for pelvic floor physical therapy, pain management, and hormonal suppression to maintain your quality of life after you heal.',
+  },
 ]
 
 function FaqItem({ answer, index, isOpen, onToggle, question }) {

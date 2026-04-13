@@ -75,6 +75,23 @@ function getFlowClass(flowLevel) {
   return flowLevel ? `cycle-calendar__day--${flowLevel.replace(/\s+/g, '-')}` : ''
 }
 
+function getCompactFlowLabel(flowLevel) {
+  switch (flowLevel) {
+    case 'spotting':
+      return 'Spot'
+    case 'light':
+      return 'Light'
+    case 'moderate':
+      return 'Mod'
+    case 'heavy':
+      return 'Heavy'
+    case 'very heavy':
+      return 'V heavy'
+    default:
+      return 'None'
+  }
+}
+
 function getDefaultFormState(dateValue) {
   return {
     date: dateValue,
@@ -359,7 +376,12 @@ function PeriodTrackerPage() {
                   <span className="cycle-calendar__day-number">{day.date.getDate()}</span>
                   {entry && (
                     <>
-                      <span className="cycle-calendar__day-meta">{entry.flowLevel}</span>
+                      <span className="cycle-calendar__day-meta">
+                        <span className="cycle-calendar__day-meta-full">{entry.flowLevel}</span>
+                        <span className="cycle-calendar__day-meta-compact">
+                          {getCompactFlowLabel(entry.flowLevel)}
+                        </span>
+                      </span>
                       {entry.cycleDay && (
                         <span className="cycle-calendar__day-cycle">Day {entry.cycleDay}</span>
                       )}
