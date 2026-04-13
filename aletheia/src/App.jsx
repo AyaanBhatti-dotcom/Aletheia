@@ -5,6 +5,8 @@ import { useDemo } from './context/DemoContext.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
 import FaqPage from './pages/FaqPage.jsx'
 import InsightsPage from './pages/InsightsPage.jsx'
+import LogDetailPage from './pages/LogDetailPage.jsx'
+import LogsPage from './pages/LogsPage.jsx'
 import SettingsPage from './pages/SettingsPage.jsx'
 import SymptomLogPage from './pages/SymptomLogPage.jsx'
 import PeriodTrackerPage from './pages/PeriodTrackerPage.jsx'
@@ -119,6 +121,8 @@ function App() {
           <Routes location={location}>
             <Route path="/" element={<DashboardPage />} />
             <Route path="/log" element={<SymptomLogPage />} />
+            <Route path="/logs" element={<LogsPage />} />
+            <Route path="/logs/:entryType/:entryId" element={<LogDetailPage />} />
             <Route path="/tracker" element={<PeriodTrackerPage />} />
             <Route path="/insights" element={<InsightsPage />} />
             <Route path="/faq" element={<FaqPage />} />

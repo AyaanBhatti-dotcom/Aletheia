@@ -912,11 +912,22 @@ input[type="range"]::-moz-range-thumb {
   gap: 18px;
 }
 
+.landing-history__actions {
+  display: flex;
+  align-items: end;
+  gap: 14px;
+}
+
 .landing-history__subcopy {
   max-width: 28ch;
   color: var(--color-text-muted);
   font-size: 14px;
   text-align: right;
+}
+
+.landing-history__link {
+  width: fit-content;
+  flex-shrink: 0;
 }
 
 .landing-entry-list {
@@ -934,6 +945,7 @@ input[type="range"]::-moz-range-thumb {
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow);
   transition: transform var(--ease), box-shadow var(--ease), border-color var(--ease);
+  text-decoration: none;
 }
 
 .landing-entry:hover {
@@ -993,6 +1005,67 @@ input[type="range"]::-moz-range-thumb {
   background: rgba(255, 255, 255, 0.72);
   border: 1px solid var(--color-border);
   color: var(--color-text-muted);
+}
+
+.log-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 249, 246, 1) 100%);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow);
+  text-decoration: none;
+  transition: transform var(--ease), border-color var(--ease), box-shadow var(--ease);
+}
+
+.log-row:hover {
+  transform: translateY(-1px);
+  border-color: var(--color-primary-light);
+  box-shadow: var(--shadow-md);
+}
+
+.log-row__title {
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+.log-row__time {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.log-row__summary {
+  color: var(--color-primary);
+  font-weight: 700;
+  text-transform: capitalize;
+  text-align: right;
+}
+
+.detail-row {
+  display: grid;
+  gap: 6px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-row__label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.detail-row__value {
+  color: var(--color-text);
 }
 
 /* ── Keyframes ──────────────────────────────────── */
@@ -1055,11 +1128,26 @@ input[type="range"]::-moz-range-thumb {
     align-items: start;
   }
 
+  .landing-history__actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: start;
+  }
+
   .landing-history__subcopy {
     text-align: left;
   }
 
   .landing-entry-list {
     grid-template-columns: 1fr;
+  }
+
+  .log-row {
+    flex-direction: column;
+    align-items: start;
+  }
+
+  .log-row__summary {
+    text-align: left;
   }
 }

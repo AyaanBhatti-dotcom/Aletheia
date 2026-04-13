@@ -116,6 +116,7 @@ function DashboardPage() {
       .filter((entry) => entry.dateTime)
       .map((entry) => ({
         id: entry.id || entry.dateTime,
+        entryType: 'symptom',
         type: 'Symptom log',
         timestamp: entry.dateTime,
         meta: `Pain ${entry.painScale}/10`,
@@ -125,6 +126,7 @@ function DashboardPage() {
       .filter((entry) => entry.date)
       .map((entry) => ({
         id: entry.id || entry.date,
+        entryType: 'cycle',
         type: 'Cycle log',
         timestamp: entry.date,
         meta: entry.flowLevel || 'No flow noted',
@@ -221,13 +223,22 @@ function DashboardPage() {
             <span className="landing-section-label">Recent activity</span>
             <h2>Last 7 entries</h2>
           </div>
-          <p className="landing-history__subcopy">A quick glance at the most recent notes in your timeline.</p>
+          <div className="landing-history__actions">
+            <p className="landing-history__subcopy">A quick glance at the most recent notes in your timeline.</p>
+            <Link to="/logs" className="btn-secondary landing-history__link">
+              View all logs
+            </Link>
+          </div>
         </div>
 
         {recentEntries.length > 0 ? (
           <div className="landing-entry-list">
             {recentEntries.map((entry) => (
-              <article key={entry.id} className="landing-entry">
+              <Link
+                key={entry.id}
+                to={`/logs/${entry.entryType}/${entry.id}`}
+                className="landing-entry"
+              >
                 <div className="landing-entry__topline">
                   <span className="landing-entry__type">{entry.type}</span>
                   <time className="landing-entry__time">
@@ -238,7 +249,7 @@ function DashboardPage() {
                   {entry.score ? <PainDot score={entry.score} /> : <span className="landing-entry__pill" />}
                   <p className="landing-entry__meta">{entry.meta}</p>
                 </div>
-              </article>
+              </Link>
             ))}
           </div>
         ) : (
