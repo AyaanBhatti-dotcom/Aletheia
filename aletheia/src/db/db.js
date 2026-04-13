@@ -64,11 +64,11 @@ function runTransaction(storeNames, mode, callback) {
 function saveEntry(storeName, entry) {
   const nextEntry = {
     ...entry,
-    id: crypto.randomUUID(),
+    id: entry?.id || crypto.randomUUID(),
   }
 
   return runTransaction(storeName, 'readwrite', (transaction, resolve, reject) => {
-    const request = transaction.objectStore(storeName).add(nextEntry)
+    const request = transaction.objectStore(storeName).put(nextEntry)
 
     request.addEventListener('success', () => {
       resolve(nextEntry)

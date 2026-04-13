@@ -329,8 +329,22 @@ function getCompactFlowLabel(flowLevel) {
   }
 }
 
+function getCompactPredictionLabel(marker) {
+  switch (marker) {
+    case 'period':
+      return 'Period'
+    case 'fertile':
+      return 'Fertile'
+    case 'ovulation':
+      return 'Ovu'
+    default:
+      return ''
+  }
+}
+
 function getDefaultFormState(dateValue) {
   return {
+    id: null,
     date: dateValue,
     flowLevel: 'none',
     bloodColor: 'bright red',
@@ -350,6 +364,7 @@ function getFormStateFromEntry(entry, dateValue) {
   }
 
   return {
+    id: entry.id || null,
     date: dateValue,
     flowLevel: entry.flowLevel || 'none',
     bloodColor: entry.bloodColor || 'bright red',
@@ -494,6 +509,7 @@ function PeriodTrackerPage() {
     event.preventDefault()
 
     const savedEntry = await saveCycleEntry({
+      id: formState.id,
       date: formState.date,
       flowLevel: formState.flowLevel,
       bloodColor: formState.bloodColor,
@@ -508,6 +524,7 @@ function PeriodTrackerPage() {
 
     if (!isDemoMode) {
       setCycleEntries((currentEntries) => replaceEntryForDate(currentEntries, savedEntry))
+      setFormState(getFormStateFromEntry(savedEntry, savedEntry.date))
     }
 
     setSavedKey(Date.now())
@@ -706,7 +723,12 @@ function PeriodTrackerPage() {
                     </>
                   )}
                   {!entry && prediction.label && (
-                    <span className="cycle-calendar__day-prediction">{prediction.label}</span>
+                    <span className="cycle-calendar__day-prediction">
+                      <span className="cycle-calendar__day-prediction-full">{prediction.label}</span>
+                      <span className="cycle-calendar__day-prediction-compact">
+                        {getCompactPredictionLabel(prediction.marker)}
+                      </span>
+                    </span>
                   )}
                 </button>
               )

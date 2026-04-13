@@ -901,6 +901,11 @@ input[type="range"]::-moz-range-thumb {
   line-height: 1.25;
   letter-spacing: 0.02em;
   color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.cycle-calendar__day-prediction-compact {
+  display: none;
 }
 
 .cycle-calendar__day--predicted-period {
@@ -1391,9 +1396,10 @@ input[type="range"]::-moz-range-thumb {
   }
 
   .cycle-calendar__day {
-    min-height: 76px;
-    padding: 8px 6px;
-    gap: 6px;
+    min-height: 82px;
+    padding: 8px 5px 7px;
+    gap: 4px;
+    justify-content: flex-start;
   }
 
   .cycle-calendar__day-number {
@@ -1401,7 +1407,8 @@ input[type="range"]::-moz-range-thumb {
   }
 
   .cycle-calendar__day-meta,
-  .cycle-calendar__day-cycle {
+  .cycle-calendar__day-cycle,
+  .cycle-calendar__day-prediction {
     font-size: 9px;
     line-height: 1.15;
   }
@@ -1416,6 +1423,14 @@ input[type="range"]::-moz-range-thumb {
 
   .cycle-calendar__day-cycle {
     font-size: 8px;
+  }
+
+  .cycle-calendar__day-prediction-full {
+    display: none;
+  }
+
+  .cycle-calendar__day-prediction-compact {
+    display: inline;
   }
 
   .security-brief {
