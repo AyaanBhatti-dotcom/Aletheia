@@ -41,6 +41,25 @@
   box-shadow: 0 6px 20px rgba(63, 42, 86, 0.3);
 }
 
+.onboarding-progress {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 22px;
+}
+
+.onboarding-progress__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--color-border);
+  transition: transform 180ms ease, background 180ms ease;
+}
+
+.onboarding-progress__dot--active {
+  background: var(--color-primary);
+  transform: scale(1.15);
+}
+
 .onboarding-kicker {
   margin: 0 0 8px;
   color: var(--color-primary);
@@ -65,6 +84,32 @@
   line-height: 1.6;
   max-width: 34ch;
   font-weight: 500;
+}
+
+.onboarding-notes {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.onboarding-note {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  color: var(--color-text);
+  font-size: 14px;
+  line-height: 1.55;
+  font-weight: 500;
+}
+
+.onboarding-note__mark {
+  width: 8px;
+  height: 8px;
+  margin-top: 7px;
+  border-radius: 999px;
+  background: var(--color-primary-light);
+  box-shadow: 0 0 0 4px rgba(63, 42, 86, 0.08);
+  flex-shrink: 0;
 }
 
 .onboarding-actions {
@@ -207,6 +252,17 @@
 @media (min-width: 640px) {
   .page-content {
     padding: 28px 24px 100px;
+  }
+}
+
+@media (max-width: 560px) {
+  .onboarding-actions {
+    flex-direction: column;
+  }
+
+  .onboarding-actions .btn-primary,
+  .onboarding-actions .btn-secondary {
+    width: 100%;
   }
 }
 

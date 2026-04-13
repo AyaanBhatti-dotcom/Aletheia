@@ -62,6 +62,58 @@ const navItems = [
 ]
 
 const ONBOARDING_STORAGE_KEY = 'aletheia-onboarding-complete'
+const tourSteps = [
+  {
+    eyebrow: 'Welcome',
+    title: 'Welcome to Aletheia.',
+    body:
+      'This is your private place to track symptoms, follow your cycle, and turn scattered notes into something you can actually use.',
+    highlights: [
+      'Everything stays in this browser unless you choose to export it.',
+      'You can move at your own pace and start with as little information as you want.',
+    ],
+  },
+  {
+    eyebrow: 'Track',
+    title: 'Log symptoms and cycle changes day by day.',
+    body:
+      'Use Symptom log for pain, body areas, notes, and photos. Use Cycle to record flow, discharge, pain scales, and the calendar view.',
+    highlights: [
+      'Tap dates in the cycle calendar to jump into a specific day.',
+      'Your entries build a timeline you can browse later in All logs.',
+    ],
+  },
+  {
+    eyebrow: 'Review',
+    title: 'Open past logs and look for patterns.',
+    body:
+      'The dashboard gives you a quick summary, while Insights turns your entries into flare history, top symptoms, phase pain, and 30-day averages.',
+    highlights: [
+      'Recent activity on the home screen opens into full entry details.',
+      'Insights becomes more useful as you log more days.',
+    ],
+  },
+  {
+    eyebrow: 'Export',
+    title: 'Create a PDF report when you need to share context.',
+    body:
+      'From the dashboard, use Export report to generate a local PDF with your symptom timeline, cycle summary, and pattern overview.',
+    highlights: [
+      'Reports are generated on your device.',
+      'You can also export raw data from Settings as JSON.',
+    ],
+  },
+  {
+    eyebrow: 'Privacy',
+    title: 'Privacy and encryption are built into the app.',
+    body:
+      'Settings lets you activate encryption with a passphrase, export or clear data, and review the privacy notice for how everything is stored.',
+    highlights: [
+      'Data is stored locally in this browser.',
+      'No entries are transmitted to a server by default.',
+    ],
+  },
+]
 
 function App() {
   const { isDemoMode, toggleDemo } = useDemo()
@@ -69,6 +121,7 @@ function App() {
   const [showOnboarding, setShowOnboarding] = useState(
     () => !localStorage.getItem(ONBOARDING_STORAGE_KEY),
   )
+  const [tourStep, setTourStep] = useState(0)
 
   function completeOnboarding(enableDemoMode) {
     if (enableDemoMode && !isDemoMode) {
@@ -84,21 +137,54 @@ function App() {
         <div className="onboarding-screen">
           <div className="onboarding-panel">
             <div className="onboarding-orb" aria-hidden="true" />
-            <p className="onboarding-kicker">Aletheia</p>
-            <h1 className="onboarding-title">A private place to understand your body.</h1>
-            <p className="onboarding-copy">
-              Track symptoms, log cycle changes, and review insights — stored entirely on this device.
-            </p>
+            <div className="onboarding-progress">
+              {tourSteps.map((step, index) => (
+                <span
+                  key={step.title}
+                  className={`onboarding-progress__dot${index === tourStep ? ' onboarding-progress__dot--active' : ''}`}
+                />
+              ))}
+            </div>
+            <p className="onboarding-kicker">{tourSteps[tourStep].eyebrow}</p>
+            <h1 className="onboarding-title">{tourSteps[tourStep].title}</h1>
+            <p className="onboarding-copy">{tourSteps[tourStep].body}</p>
+            <div className="onboarding-notes">
+              {tourSteps[tourStep].highlights.map((item) => (
+                <div key={item} className="onboarding-note">
+                  <span className="onboarding-note__mark" aria-hidden="true" />
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
             <div className="onboarding-actions">
-              <button type="button" className="btn-primary" onClick={() => completeOnboarding(false)}>
-                Get started
-              </button>
+              {tourStep > 0 && (
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => setTourStep((currentStep) => currentStep - 1)}
+                >
+                  Back
+                </button>
+              )}
+              {tourStep < tourSteps.length - 1 ? (
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={() => setTourStep((currentStep) => currentStep + 1)}
+                >
+                  Next
+                </button>
+              ) : (
+                <button type="button" className="btn-primary" onClick={() => completeOnboarding(false)}>
+                  Get started
+                </button>
+              )}
               <button
                 type="button"
                 className="btn-secondary"
-                onClick={() => completeOnboarding(true)}
+                onClick={() => (tourStep === tourSteps.length - 1 ? completeOnboarding(true) : completeOnboarding(false))}
               >
-                Try demo
+                {tourStep === tourSteps.length - 1 ? 'Try demo' : 'Skip tour'}
               </button>
             </div>
             <div className="onboarding-footer">
