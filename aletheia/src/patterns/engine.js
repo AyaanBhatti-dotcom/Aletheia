@@ -30,7 +30,7 @@ function getEntrySymptoms(entry) {
   return [...(entry.painTypes || []), ...(entry.bodyAreas || []), ...(entry.userSymptoms || [])]
 }
 
-function getCyclePhase(cycleDay) {
+export function getCyclePhase(cycleDay) {
   if (!Number.isFinite(cycleDay) || cycleDay < 1) {
     return null
   }

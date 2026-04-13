@@ -5,6 +5,7 @@ import { useDemo } from '../context/DemoContext.jsx'
 import { useTour } from '../context/TourContext.jsx'
 import { getCycleEntries, saveCycleEntry } from '../db/db.js'
 import { cycleEntries as demoCycleEntries } from '../demo/demoData.js'
+import { getCyclePhase } from '../patterns/engine.js'
 
 const flowLevels = ['none', 'spotting', 'light', 'moderate', 'heavy', 'very heavy']
 const bloodColors = ['bright red', 'dark red', 'brown', 'pink', 'orange', 'purple']
@@ -19,6 +20,8 @@ const dischargeOptions = [
 ]
 const severityLabels = ['None', 'Mild', 'Moderate', 'Severe', 'Very severe']
 const weekdayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const BLEEDING_FLOW_LEVELS = new Set(['spotting', 'light', 'moderate', 'heavy', 'very heavy'])
+const MS_PER_DAY = 24 * 60 * 60 * 1000
 
 function formatTodayForDateInput() {
   const now = new Date()
@@ -43,6 +46,16 @@ function createMonthDate(value) {
 
 function formatMonthLabel(date) {
   return date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+}
+
+function formatLongDate(value) {
+  const date = new Date(`${value}T12:00:00`)
+
+  if (Number.isNaN(date.getTime())) {
+    return value
+  }
+
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
 function formatDateKey(date) {
@@ -70,6 +83,229 @@ function getCalendarDays(monthDate) {
       inMonth: dayNumber >= 1 && dayNumber <= daysInMonth,
     }
   })
+}
+
+function parseDateKey(value) {
+  return new Date(`${value}T12:00:00`)
+}
+
+function addDays(value, days) {
+  const date = parseDateKey(value)
+
+  date.setDate(date.getDate() + days)
+
+  return formatDateKey(date)
+}
+
+function differenceInDays(start, end) {
+  return Math.round((parseDateKey(end) - parseDateKey(start)) / MS_PER_DAY)
+}
+
+function isDateWithinRange(value, start, end) {
+  return value >= start && value <= end
+}
+
+function isBleedingDay(entry) {
+  return BLEEDING_FLOW_LEVELS.has(entry?.flowLevel)
+}
+
+function roundToNearestInt(value) {
+  return Math.round(value)
+}
+
+function getUniqueCycleEntries(entries) {
+  const latestByDate = new Map()
+
+  entries.forEach((entry) => {
+    if (entry?.date) {
+      latestByDate.set(entry.date, entry)
+    }
+  })
+
+  return [...latestByDate.values()].sort((left, right) => left.date.localeCompare(right.date))
+}
+
+function analyzeCycle(entries) {
+  const sortedEntries = getUniqueCycleEntries(entries)
+  const periodStarts = []
+  const periodLengths = []
+  let currentPeriodStart = null
+  let currentPeriodLength = 0
+  let previousBleedingDate = null
+
+  sortedEntries.forEach((entry) => {
+    const bleeding = isBleedingDay(entry)
+
+    if (!bleeding) {
+      if (currentPeriodStart) {
+        periodStarts.push(currentPeriodStart)
+        periodLengths.push(currentPeriodLength)
+        currentPeriodStart = null
+        currentPeriodLength = 0
+      }
+
+      return
+    }
+
+    const isNewPeriod = !previousBleedingDate || differenceInDays(previousBleedingDate, entry.date) > 1
+
+    if (isNewPeriod) {
+      if (currentPeriodStart) {
+        periodStarts.push(currentPeriodStart)
+        periodLengths.push(currentPeriodLength)
+      }
+
+      currentPeriodStart = entry.date
+      currentPeriodLength = 1
+    } else {
+      currentPeriodLength += 1
+    }
+
+    previousBleedingDate = entry.date
+  })
+
+  if (currentPeriodStart) {
+    periodStarts.push(currentPeriodStart)
+    periodLengths.push(currentPeriodLength)
+  }
+
+  const cycleLengths = []
+
+  for (let index = 1; index < periodStarts.length; index += 1) {
+    const length = differenceInDays(periodStarts[index - 1], periodStarts[index])
+
+    if (length >= 18 && length <= 45) {
+      cycleLengths.push(length)
+    }
+  }
+
+  const recentCycleLengths = cycleLengths.slice(-6)
+  const recentPeriodLengths = periodLengths.slice(-6)
+  const averageCycleLength = recentCycleLengths.length > 0
+    ? roundToNearestInt(recentCycleLengths.reduce((sum, value) => sum + value, 0) / recentCycleLengths.length)
+    : null
+  const averagePeriodLength = recentPeriodLengths.length > 0
+    ? Math.max(2, Math.min(8, roundToNearestInt(recentPeriodLengths.reduce((sum, value) => sum + value, 0) / recentPeriodLengths.length)))
+    : null
+  const lastPeriodStart = periodStarts.at(-1) || null
+  const predictedNextPeriodStart = lastPeriodStart && averageCycleLength
+    ? addDays(lastPeriodStart, averageCycleLength)
+    : null
+  const predictedPeriodEnd = predictedNextPeriodStart && averagePeriodLength
+    ? addDays(predictedNextPeriodStart, averagePeriodLength - 1)
+    : null
+  const predictedOvulation = predictedNextPeriodStart
+    ? addDays(predictedNextPeriodStart, -14)
+    : null
+  const fertileWindowStart = predictedOvulation ? addDays(predictedOvulation, -5) : null
+  const fertileWindowEnd = predictedOvulation ? addDays(predictedOvulation, 1) : null
+
+  return {
+    sortedEntries,
+    averageCycleLength,
+    averagePeriodLength,
+    periodStarts,
+    cycleLengths: recentCycleLengths,
+    lastPeriodStart,
+    predictedNextPeriodStart,
+    predictedPeriodEnd,
+    predictedOvulation,
+    fertileWindowStart,
+    fertileWindowEnd,
+    hasPrediction: Boolean(lastPeriodStart && averageCycleLength && averagePeriodLength),
+  }
+}
+
+function formatPhaseName(phase) {
+  if (!phase) {
+    return 'Not enough data'
+  }
+
+  return `${phase.charAt(0).toUpperCase()}${phase.slice(1)} phase`
+}
+
+function getSelectedCycleInsights(selectedDate, selectedEntry, cycleAnalysis) {
+  if (!selectedDate) {
+    return {
+      phase: null,
+      cycleDay: null,
+      source: null,
+    }
+  }
+
+  const explicitCycleDay = Number(selectedEntry?.cycleDay)
+
+  if (Number.isFinite(explicitCycleDay) && explicitCycleDay > 0) {
+    return {
+      phase: getCyclePhase(explicitCycleDay),
+      cycleDay: explicitCycleDay,
+      source: 'logged',
+    }
+  }
+
+  const relevantStart = [...cycleAnalysis.periodStarts]
+    .reverse()
+    .find((periodStart) => periodStart <= selectedDate)
+
+  if (!relevantStart) {
+    return {
+      phase: null,
+      cycleDay: null,
+      source: null,
+    }
+  }
+
+  const inferredCycleDay = differenceInDays(relevantStart, selectedDate) + 1
+
+  if (inferredCycleDay < 1 || inferredCycleDay > 60) {
+    return {
+      phase: null,
+      cycleDay: null,
+      source: null,
+    }
+  }
+
+  return {
+    phase: getCyclePhase(inferredCycleDay),
+    cycleDay: inferredCycleDay,
+    source: 'estimated',
+  }
+}
+
+function getCalendarPrediction(dayKey, cycleAnalysis, hasLoggedEntry) {
+  if (hasLoggedEntry || !cycleAnalysis.hasPrediction) {
+    return { marker: null, label: '' }
+  }
+
+  if (
+    cycleAnalysis.predictedNextPeriodStart &&
+    cycleAnalysis.predictedPeriodEnd &&
+    isDateWithinRange(dayKey, cycleAnalysis.predictedNextPeriodStart, cycleAnalysis.predictedPeriodEnd)
+  ) {
+    return { marker: 'period', label: 'Expected period' }
+  }
+
+  if (dayKey === cycleAnalysis.predictedOvulation) {
+    return { marker: 'ovulation', label: 'Estimated ovulation' }
+  }
+
+  if (
+    cycleAnalysis.fertileWindowStart &&
+    cycleAnalysis.fertileWindowEnd &&
+    isDateWithinRange(dayKey, cycleAnalysis.fertileWindowStart, cycleAnalysis.fertileWindowEnd)
+  ) {
+    return { marker: 'fertile', label: 'Estimated fertile window' }
+  }
+
+  return { marker: null, label: '' }
+}
+
+function replaceEntryForDate(entries, savedEntry) {
+  const nextEntries = entries.filter((entry) => entry.date !== savedEntry.date)
+
+  nextEntries.push(savedEntry)
+
+  return nextEntries
 }
 
 function getFlowClass(flowLevel) {
@@ -238,7 +474,8 @@ function PeriodTrackerPage() {
   }, [isDemoMode, sourceKey])
 
   const entryByDate = new Map()
-  cycleEntries.forEach((entry) => {
+  const uniqueCycleEntries = getUniqueCycleEntries(cycleEntries)
+  uniqueCycleEntries.forEach((entry) => {
     entryByDate.set(entry.date, entry)
   })
 
@@ -267,7 +504,7 @@ function PeriodTrackerPage() {
     })
 
     if (!isDemoMode) {
-      setCycleEntries((currentEntries) => [...currentEntries, savedEntry])
+      setCycleEntries((currentEntries) => replaceEntryForDate(currentEntries, savedEntry))
     }
 
     setSavedKey(Date.now())
@@ -280,6 +517,43 @@ function PeriodTrackerPage() {
 
   const calendarDays = getCalendarDays(visibleMonth)
   const todayKey = formatTodayForDateInput()
+  const selectedEntry = entryByDate.get(formState.date)
+  const cycleAnalysis = analyzeCycle(cycleEntries)
+  const selectedCycleInsights = getSelectedCycleInsights(formState.date, selectedEntry, cycleAnalysis)
+  const forecastCards = [
+    {
+      label: 'Current phase',
+      value: formatPhaseName(selectedCycleInsights.phase),
+      note:
+        selectedCycleInsights.cycleDay
+          ? `Cycle day ${selectedCycleInsights.cycleDay}${selectedCycleInsights.source === 'estimated' ? ' · estimated from bleeding history' : ''}`
+          : 'Log flow or cycle day to improve this view.',
+    },
+    {
+      label: 'Next period',
+      value: cycleAnalysis.predictedNextPeriodStart ? formatLongDate(cycleAnalysis.predictedNextPeriodStart) : 'Not enough data',
+      note:
+        cycleAnalysis.predictedNextPeriodStart && cycleAnalysis.averagePeriodLength
+          ? `Estimated ${cycleAnalysis.averagePeriodLength}-day bleed`
+          : 'Needs at least two logged periods.',
+    },
+    {
+      label: 'Ovulation',
+      value: cycleAnalysis.predictedOvulation ? formatLongDate(cycleAnalysis.predictedOvulation) : 'Not enough data',
+      note:
+        cycleAnalysis.fertileWindowStart && cycleAnalysis.fertileWindowEnd
+          ? `Fertile window ${formatLongDate(cycleAnalysis.fertileWindowStart)} to ${formatLongDate(cycleAnalysis.fertileWindowEnd)}`
+          : 'Shown once a cycle estimate is available.',
+    },
+    {
+      label: 'Average cycle',
+      value: cycleAnalysis.averageCycleLength ? `${cycleAnalysis.averageCycleLength} days` : 'Not enough data',
+      note:
+        cycleAnalysis.cycleLengths.length > 0
+          ? `Based on ${cycleAnalysis.cycleLengths.length} recent cycle${cycleAnalysis.cycleLengths.length > 1 ? 's' : ''}`
+          : 'Needs recurring bleed starts to estimate.',
+    },
+  ]
 
   return (
     <div style={{ width: '100%', maxWidth: '860px' }}>
@@ -310,6 +584,28 @@ function PeriodTrackerPage() {
             />
           </div>
         )}
+
+        <section className="tracker-forecast">
+          <div className="tracker-forecast__header">
+            <div>
+              <p className="privacy-badge">Cycle estimates</p>
+              <h2 style={{ marginTop: '10px', marginBottom: '6px' }}>Phases, ovulation, and next period</h2>
+            </div>
+            <p className="tracker-forecast__copy">
+              Estimates are based on recorded bleeding patterns and should be treated as directional, not exact.
+            </p>
+          </div>
+
+          <div className="tracker-forecast__grid">
+            {forecastCards.map((card) => (
+              <div key={card.label} className="tracker-forecast__card">
+                <span className="tracker-forecast__label">{card.label}</span>
+                <strong className="tracker-forecast__value">{card.value}</strong>
+                <p className="tracker-forecast__note">{card.note}</p>
+              </div>
+            ))}
+          </div>
+        </section>
 
         <section
           data-tour-target="cycle-calendar"
@@ -357,6 +653,18 @@ function PeriodTrackerPage() {
                 <span>{flowLevel}</span>
               </div>
             ))}
+            <div className="tracker-calendar-legend__item">
+              <span className="tracker-calendar-legend__swatch tracker-calendar-legend__swatch--period" />
+              <span>Expected period</span>
+            </div>
+            <div className="tracker-calendar-legend__item">
+              <span className="tracker-calendar-legend__swatch tracker-calendar-legend__swatch--fertile" />
+              <span>Fertile window</span>
+            </div>
+            <div className="tracker-calendar-legend__item">
+              <span className="tracker-calendar-legend__swatch tracker-calendar-legend__swatch--ovulation" />
+              <span>Ovulation</span>
+            </div>
           </div>
 
           <div className="cycle-calendar">
@@ -370,13 +678,15 @@ function PeriodTrackerPage() {
               const entry = entryByDate.get(day.key)
               const isSelected = formState.date === day.key
               const isToday = day.key === todayKey
+              const prediction = getCalendarPrediction(day.key, cycleAnalysis, Boolean(entry))
 
               return (
                 <button
                   key={day.key}
                   type="button"
-                  className={`cycle-calendar__day${day.inMonth ? '' : ' cycle-calendar__day--outside'}${isSelected ? ' cycle-calendar__day--selected' : ''}${isToday ? ' cycle-calendar__day--today' : ''}${entry ? ` ${getFlowClass(entry.flowLevel)}` : ''}`}
+                  className={`cycle-calendar__day${day.inMonth ? '' : ' cycle-calendar__day--outside'}${isSelected ? ' cycle-calendar__day--selected' : ''}${isToday ? ' cycle-calendar__day--today' : ''}${entry ? ` ${getFlowClass(entry.flowLevel)}` : ''}${prediction.marker ? ` cycle-calendar__day--predicted-${prediction.marker}` : ''}`}
                   onClick={() => selectDate(day.key)}
+                  aria-label={`${formatLongDate(day.key)}${prediction.label ? `. ${prediction.label}.` : ''}`}
                 >
                   <span className="cycle-calendar__day-number">{day.date.getDate()}</span>
                   {entry && (
@@ -391,6 +701,9 @@ function PeriodTrackerPage() {
                         <span className="cycle-calendar__day-cycle">Day {entry.cycleDay}</span>
                       )}
                     </>
+                  )}
+                  {!entry && prediction.label && (
+                    <span className="cycle-calendar__day-prediction">{prediction.label}</span>
                   )}
                 </button>
               )
