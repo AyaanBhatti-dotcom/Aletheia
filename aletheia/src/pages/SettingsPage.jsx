@@ -34,6 +34,20 @@ function SettingsSection({ title, description, children }) {
   )
 }
 
+function SecurityPillar({ title, body, icon }) {
+  return (
+    <div className="security-pillar">
+      <div className="security-pillar__icon" aria-hidden="true">
+        {icon}
+      </div>
+      <div className="security-pillar__content">
+        <h3 className="security-pillar__title">{title}</h3>
+        <p className="security-pillar__body">{body}</p>
+      </div>
+    </div>
+  )
+}
+
 function SettingsPage() {
   const { activeTourTarget, isTourOpen } = useTour()
   const [passphrase, setPassphrase] = useState('')
@@ -106,7 +120,6 @@ function SettingsPage() {
 
   return (
     <div style={{ width: '100%', maxWidth: '600px', display: 'grid', gap: '14px' }}>
-
       <div style={{ paddingBottom: '4px' }}>
         <h1 style={{ marginBottom: '6px' }}>Settings</h1>
         <p style={{ fontSize: '14px', color: 'var(--color-text-muted)', fontWeight: 500 }}>
@@ -114,43 +127,82 @@ function SettingsPage() {
         </p>
       </div>
 
-      {/* Privacy notice */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '14px',
-          padding: '16px 20px',
-          background: 'var(--color-accent)',
-          borderRadius: 'var(--radius-lg)',
-          border: '1px solid var(--color-border)',
-        }}
-      >
-        <div style={{
-          width: 36,
-          height: 36,
-          borderRadius: '50%',
-          background: 'var(--color-surface)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-          border: '1px solid var(--color-border)',
-        }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-            <path d="M7 11V7a5 5 0 0110 0v4" />
-          </svg>
-        </div>
-        <div>
-          <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--color-text)', marginBottom: '2px' }}>
-            Stored locally on your device
-          </p>
-          <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', fontWeight: 500 }}>
-            No data is sent to any server. Your entries never leave this browser.
+      <section className="security-brief">
+        <div className="security-brief__hero">
+          <div className="security-brief__badge">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 3l7 4v5c0 4.6-2.7 7.9-7 9-4.3-1.1-7-4.4-7-9V7l7-4z" />
+              <path d="M9.5 12.5l1.8 1.8 3.7-4.1" />
+            </svg>
+            Security and privacy
+          </div>
+          <h2 className="security-brief__title">Your health notes stay in your browser, under your control.</h2>
+          <p className="security-brief__copy">
+            Aletheia is designed as a local-first app. Symptom logs, cycle entries, and exports are handled on your device instead of being uploaded to a remote account or shared server.
           </p>
         </div>
-      </div>
+
+        <div className="security-brief__grid">
+          <SecurityPillar
+            title="Local-only storage"
+            body="Entries are stored in this browser on this device. There is no default cloud sync, no account login, and no background transfer of your records to an Aletheia server."
+            icon={(
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2v20" />
+                <path d="M5 7h14" />
+                <path d="M5 17h14" />
+                <path d="M3 12h18" />
+              </svg>
+            )}
+          />
+          <SecurityPillar
+            title="Session encryption tools"
+            body="When you activate encryption, the app derives an AES-GCM key from your passphrase in the browser using PBKDF2 with SHA-256. That session key stays local to the current browser session and is not sent anywhere."
+            icon={(
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="10" rx="2" />
+                <path d="M7 11V8a5 5 0 0110 0v3" />
+              </svg>
+            )}
+          />
+          <SecurityPillar
+            title="Access stays with this device"
+            body="Because data is local-first, remote third parties cannot open your entries through an online dashboard. In practice, access is limited to people who can use this browser profile, this device, or any exported files you choose to save."
+            icon={(
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 21a8 8 0 10-16 0" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            )}
+          />
+          <SecurityPillar
+            title="Export stays intentional"
+            body="Reports and JSON exports are created only when you request them. Nothing is shared automatically, so you decide whether a file stays private, is backed up, or is shown to a clinician."
+            icon={(
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 3v12" />
+                <path d="M7 10l5 5 5-5" />
+                <path d="M5 21h14" />
+              </svg>
+            )}
+          />
+          <SecurityPillar
+            title="Open source and inspectable"
+            body="Aletheia is open source, which means its privacy and security approach can be reviewed in the code instead of hidden behind closed infrastructure or vague promises."
+            icon={(
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16 18l6-6-6-6" />
+                <path d="M8 6l-6 6 6 6" />
+                <path d="M14 4l-4 16" />
+              </svg>
+            )}
+          />
+        </div>
+
+        <div className="security-brief__note">
+          <strong>What this means for you:</strong> Aletheia keeps your information off a central server, and its privacy model is visible in the open-source codebase, but your protection still depends on the security of your own device, browser profile, and any files you export.
+        </div>
+      </section>
 
       {/* Encryption */}
       <SettingsSection

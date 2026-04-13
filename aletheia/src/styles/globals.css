@@ -446,6 +446,114 @@ input[type="range"]::-moz-range-thumb {
   color: var(--color-primary);
 }
 
+.security-brief {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  gap: 20px;
+  padding: 26px;
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at top right, rgba(90, 140, 107, 0.12), transparent 28%),
+    radial-gradient(circle at bottom left, rgba(63, 42, 86, 0.12), transparent 30%),
+    linear-gradient(160deg, #fffdf7 0%, #f6f2e8 52%, #f8f6ef 100%);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-lg);
+}
+
+.security-brief__hero {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 12px;
+}
+
+.security-brief__badge {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(90, 140, 107, 0.18);
+  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.security-brief__title {
+  max-width: 12ch;
+  margin: 0;
+  font-size: clamp(2.3rem, 6vw, 3.8rem);
+  line-height: 0.94;
+  letter-spacing: -0.04em;
+}
+
+.security-brief__copy {
+  max-width: 44ch;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.security-brief__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.security-pillar {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: start;
+  padding: 18px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(221, 211, 228, 0.9);
+}
+
+.security-pillar__icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: rgba(90, 140, 107, 0.12);
+  color: var(--color-primary);
+}
+
+.security-pillar__content {
+  display: grid;
+  gap: 6px;
+}
+
+.security-pillar__title {
+  margin: 0;
+  font-size: 0.98rem;
+}
+
+.security-pillar__body {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.security-brief__note {
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(63, 42, 86, 0.06);
+  border: 1px solid rgba(63, 42, 86, 0.1);
+  color: var(--color-text);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
 /* ── Stat Cards ─────────────────────────────────── */
 
 .stat-card {
@@ -1246,6 +1354,10 @@ input[type="range"]::-moz-range-thumb {
 }
 
 @media (max-width: 780px) {
+  .security-brief__grid {
+    grid-template-columns: 1fr;
+  }
+
   .tracker-forecast__header {
     flex-direction: column;
     align-items: start;
@@ -1294,6 +1406,14 @@ input[type="range"]::-moz-range-thumb {
 
   .cycle-calendar__day-cycle {
     font-size: 8px;
+  }
+
+  .security-brief {
+    padding: 22px;
+  }
+
+  .security-brief__title {
+    max-width: 13ch;
   }
 
   .landing-hero {
