@@ -7,7 +7,7 @@ import { getCycleEntries, saveCycleEntry } from '../db/db.js'
 import { cycleEntries as demoCycleEntries } from '../demo/demoData.js'
 
 const flowLevels = ['none', 'spotting', 'light', 'moderate', 'heavy', 'very heavy']
-const bloodColors = ['bright red', 'dark red', 'brown', 'pink', 'orange']
+const bloodColors = ['bright red', 'dark red', 'brown', 'pink', 'orange', 'purple']
 const clotOptions = ['none', 'small clots', 'large clots']
 const dischargeOptions = [
   'none',

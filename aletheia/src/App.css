@@ -46,8 +46,28 @@
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow-lg);
   animation: scale-in 340ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
-  position: relative;
   z-index: 50;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.tour-spotlight {
+  position: fixed;
+  z-index: 46;
+  pointer-events: none;
+  border: 2px solid rgba(108, 76, 153, 0.78);
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow:
+    0 0 0 9999px rgba(32, 26, 43, 0.24),
+    0 0 0 6px rgba(255, 255, 255, 0.18),
+    0 22px 54px rgba(32, 26, 43, 0.28);
+  transition:
+    top 220ms ease,
+    left 220ms ease,
+    width 220ms ease,
+    height 220ms ease,
+    border-radius 220ms ease;
+  animation: tour-spotlight-pulse 1.9s ease-in-out infinite;
 }
 
 .onboarding-orb {
@@ -289,6 +309,24 @@
   }
 }
 
+@keyframes tour-spotlight-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow:
+      0 0 0 9999px rgba(32, 26, 43, 0.24),
+      0 0 0 6px rgba(255, 255, 255, 0.18),
+      0 22px 54px rgba(32, 26, 43, 0.28);
+  }
+
+  50% {
+    transform: scale(1.012);
+    box-shadow:
+      0 0 0 9999px rgba(32, 26, 43, 0.24),
+      0 0 0 10px rgba(255, 255, 255, 0.12),
+      0 28px 64px rgba(32, 26, 43, 0.34);
+  }
+}
+
 /* ── Responsive ─────────────────────────────────── */
 
 @media (min-width: 640px) {
@@ -297,9 +335,66 @@
   }
 }
 
-@media (max-width: 560px) {
+@media (max-width: 640px) {
+  .onboarding-screen {
+    padding:
+      max(12px, env(safe-area-inset-top, 0px))
+      12px
+      max(12px, env(safe-area-inset-bottom, 0px));
+  }
+
+  .onboarding-panel {
+    left: 12px !important;
+    right: 12px;
+    top: auto !important;
+    bottom: max(12px, env(safe-area-inset-bottom, 0px));
+    width: auto;
+    max-width: none;
+    max-height: min(58dvh, 520px);
+    padding: 20px 18px 18px;
+    border-radius: 26px;
+  }
+
+  .onboarding-orb {
+    width: 36px;
+    height: 36px;
+    margin-bottom: 14px;
+  }
+
+  .onboarding-progress {
+    margin-bottom: 16px;
+  }
+
+  .onboarding-title {
+    font-size: clamp(1.4rem, 7vw, 2rem);
+    margin-bottom: 10px;
+    max-width: none;
+  }
+
+  .onboarding-copy {
+    font-size: 14px;
+    line-height: 1.5;
+    max-width: none;
+  }
+
+  .onboarding-notes {
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .onboarding-note {
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
   .onboarding-actions {
     flex-direction: column;
+    position: sticky;
+    bottom: -18px;
+    margin-top: 20px;
+    padding-top: 14px;
+    padding-bottom: 4px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0), var(--color-surface) 18%);
   }
 
   .onboarding-actions .btn-primary,
@@ -307,14 +402,17 @@
     width: 100%;
   }
 
-  .onboarding-panel {
-    left: 20px !important;
-    right: 20px;
-    top: auto !important;
-    bottom: 20px;
-    width: auto;
-    max-height: min(78vh, 640px);
-    overflow: auto;
+  .onboarding-footer {
+    margin-top: 14px;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) * 0.35);
+  }
+
+  .tour-spotlight {
+    border-width: 2px;
+    box-shadow:
+      0 0 0 9999px rgba(32, 26, 43, 0.28),
+      0 0 0 4px rgba(255, 255, 255, 0.16),
+      0 16px 34px rgba(32, 26, 43, 0.26);
   }
 }
 

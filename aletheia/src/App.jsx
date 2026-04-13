@@ -163,6 +163,7 @@ function App() {
   const [tourOverlayStyle, setTourOverlayStyle] = useState({
     panel: null,
     scrim: null,
+    spotlight: null,
   })
 
   useEffect(() => {
@@ -207,73 +208,111 @@ function App() {
         setTourOverlayStyle({
           panel: null,
           scrim: null,
+          spotlight: null,
         })
         return
       }
 
+      const isMobileViewport = window.innerWidth <= 640
+
       targetNode.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-        inline: 'center',
+        behavior: 'auto',
+        block: isMobileViewport ? 'start' : 'center',
+        inline: 'nearest',
       })
 
-      const viewportWidth = window.innerWidth
-      const viewportHeight = window.innerHeight
-      const gap = 24
-      const margin = 20
-      const targetRect = targetNode.getBoundingClientRect()
-      const panelRect = panelNode.getBoundingClientRect()
-      const spaceRight = viewportWidth - targetRect.right - margin
-      const spaceLeft = targetRect.left - margin
-      const spaceAbove = targetRect.top - margin
-      const spaceBelow = viewportHeight - targetRect.bottom - margin
-      const canFitRight = spaceRight >= panelRect.width + gap
-      const canFitLeft = spaceLeft >= panelRect.width + gap
-      const canFitBelow = spaceBelow >= panelRect.height + gap
-      const canFitAbove = spaceAbove >= panelRect.height + gap
+      const measure = () => {
+        const viewportWidth = window.innerWidth
+        const viewportHeight = window.innerHeight
+        const gap = 24
+        const margin = 20
+        const padding = 12
+        const targetRect = targetNode.getBoundingClientRect()
+        const panelRect = panelNode.getBoundingClientRect()
+        const computedStyle = window.getComputedStyle(targetNode)
+        const borderRadius = computedStyle.borderRadius === '0px'
+          ? '18px'
+          : computedStyle.borderRadius
+        const spaceRight = viewportWidth - targetRect.right - margin
+        const spaceLeft = targetRect.left - margin
+        const spaceAbove = targetRect.top - margin
+        const spaceBelow = viewportHeight - targetRect.bottom - margin
+        const canFitRight = spaceRight >= panelRect.width + gap
+        const canFitLeft = spaceLeft >= panelRect.width + gap
+        const canFitBelow = spaceBelow >= panelRect.height + gap
+        const canFitAbove = spaceAbove >= panelRect.height + gap
 
-      let top = (viewportHeight - panelRect.height) / 2
-      let left = (viewportWidth - panelRect.width) / 2
+        let top = (viewportHeight - panelRect.height) / 2
+        let left = (viewportWidth - panelRect.width) / 2
 
-      if (viewportWidth >= 900 && (canFitRight || canFitLeft)) {
-        left = canFitRight
-          ? targetRect.right + gap
-          : Math.max(margin, targetRect.left - panelRect.width - gap)
-        top = Math.min(
-          Math.max(margin, targetRect.top),
-          viewportHeight - panelRect.height - margin,
-        )
-      } else if (canFitBelow || canFitAbove) {
-        top = canFitBelow
-          ? targetRect.bottom + gap
-          : Math.max(margin, targetRect.top - panelRect.height - gap)
-        left = Math.min(
-          Math.max(margin, targetRect.left + targetRect.width / 2 - panelRect.width / 2),
-          viewportWidth - panelRect.width - margin,
-        )
-      } else {
-        top = viewportHeight - panelRect.height - margin
-        left = Math.min(
-          Math.max(margin, targetRect.left + targetRect.width / 2 - panelRect.width / 2),
-          viewportWidth - panelRect.width - margin,
-        )
+        if (viewportWidth <= 640) {
+          top = viewportHeight - panelRect.height - margin - 8
+          left = margin
+        } else if (viewportWidth >= 900 && (canFitRight || canFitLeft)) {
+          left = canFitRight
+            ? targetRect.right + gap
+            : Math.max(margin, targetRect.left - panelRect.width - gap)
+          top = Math.min(
+            Math.max(margin, targetRect.top),
+            viewportHeight - panelRect.height - margin,
+          )
+        } else if (canFitBelow || canFitAbove) {
+          top = canFitBelow
+            ? targetRect.bottom + gap
+            : Math.max(margin, targetRect.top - panelRect.height - gap)
+          left = Math.min(
+            Math.max(margin, targetRect.left + targetRect.width / 2 - panelRect.width / 2),
+            viewportWidth - panelRect.width - margin,
+          )
+        } else {
+          top = viewportHeight - panelRect.height - margin
+          left = Math.min(
+            Math.max(margin, targetRect.left + targetRect.width / 2 - panelRect.width / 2),
+            viewportWidth - panelRect.width - margin,
+          )
+        }
+
+        if (viewportWidth <= 640) {
+          const panelTop = top
+          const overlap = targetRect.bottom + gap - panelTop
+
+          if (overlap > 0) {
+            window.scrollBy({
+              top: overlap + 16,
+              behavior: 'auto',
+            })
+            requestAnimationFrame(measure)
+            return
+          }
+        }
+
+        const focusX = targetRect.left + targetRect.width / 2
+        const focusY = targetRect.top + targetRect.height / 2
+        const focusRadius = Math.max(targetRect.width, targetRect.height) / 2 + 44
+
+        setTourOverlayStyle({
+          panel: {
+            top: `${Math.round(top)}px`,
+            left: `${Math.round(left)}px`,
+          },
+          scrim: {
+            '--tour-focus-x': `${Math.round(focusX)}px`,
+            '--tour-focus-y': `${Math.round(focusY)}px`,
+            '--tour-focus-radius': `${Math.round(focusRadius)}px`,
+          },
+          spotlight: {
+            top: `${Math.round(targetRect.top - padding)}px`,
+            left: `${Math.round(targetRect.left - padding)}px`,
+            width: `${Math.round(targetRect.width + padding * 2)}px`,
+            height: `${Math.round(targetRect.height + padding * 2)}px`,
+            borderRadius,
+            opacity: viewportWidth <= 640 ? 0.94 : 1,
+          },
+        })
       }
 
-      const focusPadding = 22
-      const focusX = targetRect.left + targetRect.width / 2
-      const focusY = targetRect.top + targetRect.height / 2
-      const focusRadius = Math.max(targetRect.width, targetRect.height) / 2 + focusPadding
-
-      setTourOverlayStyle({
-        panel: {
-          top: `${Math.round(top)}px`,
-          left: `${Math.round(left)}px`,
-        },
-        scrim: {
-          '--tour-focus-x': `${Math.round(focusX)}px`,
-          '--tour-focus-y': `${Math.round(focusY)}px`,
-          '--tour-focus-radius': `${Math.round(focusRadius)}px`,
-        },
+      requestAnimationFrame(() => {
+        requestAnimationFrame(measure)
       })
     }
 
@@ -306,6 +345,7 @@ function App() {
       {showOnboarding && (
         <div className="onboarding-screen">
           <div className="onboarding-scrim" style={tourOverlayStyle.scrim || undefined} />
+          <div className="tour-spotlight" style={tourOverlayStyle.spotlight || undefined} aria-hidden="true" />
           <div
             ref={panelRef}
             className="onboarding-panel"

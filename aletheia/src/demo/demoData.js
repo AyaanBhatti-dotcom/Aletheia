@@ -16,7 +16,7 @@ const systemicBodyAreas = [
   'mood changes',
 ]
 const painTypes = ['sharp', 'dull', 'cramping', 'burning', 'stabbing', 'throbbing']
-const bloodColors = ['bright red', 'dark red', 'brown', 'pink', 'orange']
+const bloodColors = ['bright red', 'dark red', 'brown', 'pink', 'orange', 'purple']
 const flareOffsets = new Set([6, 7, 8, 24, 25, 26, 27, 44, 45, 46, 47, 48])
 
 function formatDate(date) {
