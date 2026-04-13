@@ -8,41 +8,22 @@ import { symptomEntries as demoSymptomEntries } from '../demo/demoData.js'
 
 const USER_SYMPTOMS_STORAGE_KEY = 'userSymptoms'
 
-const painTypeOptions = [
-  'sharp',
-  'dull',
-  'cramping',
-  'burning',
-  'stabbing',
-  'throbbing',
-]
+const PAIN_LABELS = ['', 'Minimal', 'Mild', 'Noticeable', 'Moderate', 'Uncomfortable', 'Distressing', 'Severe', 'Intense', 'Agonizing', 'Unbearable']
+
+const painTypeOptions = ['sharp', 'dull', 'cramping', 'burning', 'stabbing', 'throbbing']
 
 const bodyAreaGroups = [
   {
-    title: 'Pain/Pelvic',
-    options: ['pelvic pain', 'lower back', 'hip', 'leg/sciatic', 'shoulder tip'],
+    title: 'Pain & Pelvic',
+    options: ['pelvic pain', 'lower back', 'hip', 'leg / sciatic', 'shoulder tip'],
   },
   {
-    title: 'Digestive/Bladder',
-    options: [
-      'bloating',
-      'nausea',
-      'constipation',
-      'diarrhea',
-      'bladder urgency',
-      'painful urination',
-    ],
+    title: 'Digestive & Bladder',
+    options: ['bloating', 'nausea', 'constipation', 'diarrhea', 'bladder urgency', 'painful urination'],
   },
   {
     title: 'Systemic',
-    options: [
-      'fatigue',
-      'brain fog',
-      'headache',
-      'chest pain',
-      'shortness of breath',
-      'mood changes',
-    ],
+    options: ['fatigue', 'brain fog', 'headache', 'chest pain', 'shortness of breath', 'mood changes'],
   },
 ]
 
@@ -50,30 +31,52 @@ function formatNowForDateTimeInput() {
   const now = new Date()
   const offset = now.getTimezoneOffset()
   const localDate = new Date(now.getTime() - offset * 60000)
-
   return localDate.toISOString().slice(0, 16)
 }
 
 function readFileAsBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
-
-    reader.addEventListener('load', () => {
-      resolve(reader.result)
-    })
-
-    reader.addEventListener('error', () => {
-      reject(reader.error)
-    })
-
+    reader.addEventListener('load', () => resolve(reader.result))
+    reader.addEventListener('error', () => reject(reader.error))
     reader.readAsDataURL(file)
   })
 }
 
 function getStoredUserSymptoms() {
-  const storedSymptoms = localStorage.getItem(USER_SYMPTOMS_STORAGE_KEY)
+  const stored = localStorage.getItem(USER_SYMPTOMS_STORAGE_KEY)
+  return stored ? JSON.parse(stored) : []
+}
 
-  return storedSymptoms ? JSON.parse(storedSymptoms) : []
+function sliderBackground(value, min, max) {
+  const pct = ((value - min) / (max - min)) * 100
+  return {
+    background: `linear-gradient(to right, var(--color-primary) ${pct}%, var(--color-border) ${pct}%)`,
+  }
+}
+
+function PillToggle({ label, active, onToggle }) {
+  return (
+    <button
+      type="button"
+      className={`pill${active ? ' pill--active' : ''}`}
+      onClick={onToggle}
+      aria-pressed={active}
+    >
+      {label}
+    </button>
+  )
+}
+
+function SectionDivider({ title }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '4px 0' }}>
+      <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', whiteSpace: 'nowrap' }}>
+        {title}
+      </span>
+      <div style={{ flex: 1, height: 1, background: 'var(--color-border)' }} />
+    </div>
+  )
 }
 
 function SymptomLogPage() {
@@ -89,75 +92,57 @@ function SymptomLogPage() {
   const [photo, setPhoto] = useState(null)
   const [hasEntries, setHasEntries] = useState(false)
   const [loadedSource, setLoadedSource] = useState('')
+  const [savedKey, setSavedKey] = useState(null)
   const sourceKey = isDemoMode ? 'demo' : 'db'
 
   useEffect(() => {
     let isMounted = true
-
     const entriesPromise = isDemoMode ? Promise.resolve(demoSymptomEntries) : getSymptomEntries()
-
     entriesPromise.then((entries) => {
-      if (!isMounted) {
-        return
-      }
-
+      if (!isMounted) return
       setHasEntries(entries.length > 0)
       setLoadedSource(sourceKey)
     })
-
-    return () => {
-      isMounted = false
-    }
+    return () => { isMounted = false }
   }, [isDemoMode, sourceKey])
 
   function toggleValue(value, setValues) {
-    setValues((currentValues) =>
-      currentValues.includes(value)
-        ? currentValues.filter((currentValue) => currentValue !== value)
-        : [...currentValues, value],
+    setValues((current) =>
+      current.includes(value) ? current.filter((v) => v !== value) : [...current, value],
     )
   }
 
   function handleAddUserSymptom(event) {
     event.preventDefault()
-
-    const trimmedSymptom = newSymptom.trim()
-
-    if (!trimmedSymptom || userSymptoms.includes(trimmedSymptom)) {
-      return
-    }
-
-    const nextUserSymptoms = [...userSymptoms, trimmedSymptom]
-
-    localStorage.setItem(USER_SYMPTOMS_STORAGE_KEY, JSON.stringify(nextUserSymptoms))
-    setUserSymptoms(nextUserSymptoms)
+    const trimmed = newSymptom.trim()
+    if (!trimmed || userSymptoms.includes(trimmed)) return
+    const next = [...userSymptoms, trimmed]
+    localStorage.setItem(USER_SYMPTOMS_STORAGE_KEY, JSON.stringify(next))
+    setUserSymptoms(next)
     setNewSymptom('')
   }
 
   async function handlePhotoChange(event) {
     const file = event.target.files?.[0]
-
-    if (!file) {
-      setPhoto(null)
-      return
-    }
-
-    const base64Photo = await readFileAsBase64(file)
-    setPhoto(base64Photo)
+    if (!file) { setPhoto(null); return }
+    const base64 = await readFileAsBase64(file)
+    setPhoto(base64)
   }
 
   async function handleSubmit(event) {
     event.preventDefault()
-
     await saveSymptomEntry({
       dateTime,
       painScale,
       painTypes,
       bodyAreas,
-      userSymptoms: selectedUserSymptoms.map((symptom) => DOMPurify.sanitize(symptom)),
+      userSymptoms: selectedUserSymptoms.map((s) => DOMPurify.sanitize(s)),
       notes: DOMPurify.sanitize(notes),
       photo,
     })
+    setHasEntries(true)
+    setSavedKey(Date.now())
+    setTimeout(() => setSavedKey(null), 2800)
   }
 
   if (loadedSource !== sourceKey) {
@@ -165,142 +150,184 @@ function SymptomLogPage() {
   }
 
   return (
-    <div style={{ width: '100%', maxWidth: '720px' }}>
-      <form className="card" onSubmit={handleSubmit} style={{ display: 'grid', gap: '24px' }}>
-        <h1>Symptom log</h1>
+    <div style={{ width: '100%', maxWidth: '600px' }}>
+      {savedKey !== null && (
+        <div className="toast" key={savedKey} role="status" aria-live="polite">
+          <span className="toast__dot" aria-hidden="true">✓</span>
+          Entry saved
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '14px' }}>
+
+        {/* Header */}
+        <div style={{ paddingBottom: '4px' }}>
+          <h1 style={{ marginBottom: '6px' }}>Symptom log</h1>
+          <p style={{ fontSize: '14px', color: 'var(--color-text-muted)', fontWeight: 500 }}>
+            Track what you feel, when you feel it.
+          </p>
+        </div>
+
         {!hasEntries && (
-          <EmptyState
-            title="Your symptom history starts here"
-            description="Log your first entry to begin building a clearer picture of pain patterns over time."
-          />
+          <div className="card">
+            <EmptyState
+              title="Your history starts here"
+              description="Log your first entry to begin building a picture of pain patterns over time."
+            />
+          </div>
         )}
 
-        <label style={{ display: 'grid', gap: '8px' }}>
-          <span>Date/time</span>
+        {/* Date & time */}
+        <div className="card" style={{ display: 'grid', gap: '10px' }}>
+          <label className="field-label" htmlFor="log-datetime">Date & time</label>
           <input
+            id="log-datetime"
             type="datetime-local"
             value={dateTime}
-            onChange={(event) => setDateTime(event.target.value)}
+            onChange={(e) => setDateTime(e.target.value)}
           />
-        </label>
+        </div>
 
-        <div style={{ display: 'grid', gap: '8px' }}>
-          <label htmlFor="pain-scale">Pain scale</label>
+        {/* Pain scale */}
+        <div className="card" style={{ display: 'grid', gap: '14px' }}>
+          <div className="field-label">Pain scale</div>
+          <div className="pain-display">
+            <span className="pain-display__number">{painScale}</span>
+            <span className="pain-display__label">{PAIN_LABELS[painScale]}</span>
+          </div>
           <input
-            id="pain-scale"
             type="range"
             min="1"
             max="10"
             value={painScale}
-            onChange={(event) => setPainScale(Number(event.target.value))}
-            style={{ padding: 0 }}
+            onChange={(e) => setPainScale(Number(e.target.value))}
+            style={sliderBackground(painScale, 1, 10)}
+            aria-label={`Pain scale: ${painScale} out of 10, ${PAIN_LABELS[painScale]}`}
           />
-          <span>{painScale}</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--color-text-muted)', fontWeight: 600 }}>
+            <span>1 · Minimal</span>
+            <span>10 · Unbearable</span>
+          </div>
         </div>
 
-        <fieldset style={{ margin: 0, padding: 0, border: 'none', display: 'grid', gap: '12px' }}>
-          <legend>Pain type</legend>
-          <div style={{ display: 'grid', gap: '10px' }}>
+        {/* Pain type */}
+        <div className="card" style={{ display: 'grid', gap: '12px' }}>
+          <div className="field-label">Pain type</div>
+          <div className="pill-group" role="group" aria-label="Pain type">
             {painTypeOptions.map((option) => (
-              <label
+              <PillToggle
                 key={option}
-                style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
-              >
-                <input
-                  type="checkbox"
-                  checked={painTypes.includes(option)}
-                  onChange={() => toggleValue(option, setPainTypes)}
-                  style={{ width: 'auto' }}
-                />
-                <span>{option}</span>
-              </label>
+                label={option}
+                active={painTypes.includes(option)}
+                onToggle={() => toggleValue(option, setPainTypes)}
+              />
             ))}
           </div>
-        </fieldset>
+        </div>
 
-        <fieldset style={{ margin: 0, padding: 0, border: 'none', display: 'grid', gap: '16px' }}>
-          <legend>Body area</legend>
+        {/* Body areas */}
+        <div className="card" style={{ display: 'grid', gap: '18px' }}>
+          <div className="field-label">Body area</div>
           {bodyAreaGroups.map((group) => (
-            <div key={group.title} style={{ display: 'grid', gap: '12px' }}>
-              <h2 style={{ margin: 0 }}>{group.title}</h2>
-              <div style={{ display: 'grid', gap: '10px' }}>
+            <div key={group.title} style={{ display: 'grid', gap: '10px' }}>
+              <SectionDivider title={group.title} />
+              <div className="pill-group" role="group" aria-label={group.title}>
                 {group.options.map((option) => (
-                  <label
+                  <PillToggle
                     key={option}
-                    style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={bodyAreas.includes(option)}
-                      onChange={() => toggleValue(option, setBodyAreas)}
-                      style={{ width: 'auto' }}
-                    />
-                    <span>{option}</span>
-                  </label>
+                    label={option}
+                    active={bodyAreas.includes(option)}
+                    onToggle={() => toggleValue(option, setBodyAreas)}
+                  />
                 ))}
               </div>
             </div>
           ))}
-        </fieldset>
+        </div>
 
-        <div style={{ display: 'grid', gap: '12px' }}>
-          <label style={{ display: 'grid', gap: '8px' }}>
-            <span>Add your own symptom</span>
-            <input
-              type="text"
-              value={newSymptom}
-              onChange={(event) => setNewSymptom(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  handleAddUserSymptom(event)
-                }
-              }}
-            />
-          </label>
-          <div>
-            <button type="button" onClick={handleAddUserSymptom}>
-              Add symptom
-            </button>
-          </div>
+        {/* Custom symptoms */}
+        <div className="card" style={{ display: 'grid', gap: '14px' }}>
+          <div className="field-label">Custom symptoms</div>
 
           {userSymptoms.length > 0 && (
-            <div style={{ display: 'grid', gap: '10px' }}>
+            <div className="pill-group" role="group" aria-label="Your custom symptoms">
               {userSymptoms.map((symptom) => (
-                <label
+                <PillToggle
                   key={symptom}
-                  style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedUserSymptoms.includes(symptom)}
-                    onChange={() => toggleValue(symptom, setSelectedUserSymptoms)}
-                    style={{ width: 'auto' }}
-                  />
-                  <span>{symptom}</span>
-                </label>
+                  label={symptom}
+                  active={selectedUserSymptoms.includes(symptom)}
+                  onToggle={() => toggleValue(symptom, setSelectedUserSymptoms)}
+                />
               ))}
             </div>
           )}
+
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end' }}>
+            <div style={{ flex: 1 }}>
+              <label htmlFor="new-symptom" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: '8px' }}>
+                Add your own
+              </label>
+              <input
+                id="new-symptom"
+                type="text"
+                placeholder="e.g. jaw pain"
+                value={newSymptom}
+                onChange={(e) => setNewSymptom(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleAddUserSymptom(e) }}
+              />
+            </div>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={handleAddUserSymptom}
+              style={{ flexShrink: 0, minWidth: 'auto', padding: '12px 16px', borderRadius: 'var(--radius-sm)' }}
+              aria-label="Add custom symptom"
+            >
+              Add
+            </button>
+          </div>
         </div>
 
-        <label style={{ display: 'grid', gap: '8px' }}>
-          <span>Notes</span>
-          <textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows="5" />
-        </label>
+        {/* Notes */}
+        <div className="card" style={{ display: 'grid', gap: '10px' }}>
+          <label className="field-label" htmlFor="log-notes">Notes</label>
+          <textarea
+            id="log-notes"
+            placeholder="Anything else worth noting today…"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows="4"
+          />
+        </div>
 
-        <label style={{ display: 'grid', gap: '8px' }}>
-          <span>Photo upload</span>
+        {/* Photo */}
+        <div className="card" style={{ display: 'grid', gap: '10px' }}>
+          <label className="field-label" htmlFor="log-photo">Photo</label>
+          <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', fontWeight: 500 }}>
+            Optional — attach an image for reference.
+          </p>
           <input
+            id="log-photo"
             type="file"
             accept="image/*"
             onChange={handlePhotoChange}
-            style={{ padding: 0 }}
+            style={{ padding: '10px 14px', fontSize: '14px' }}
           />
-        </label>
-
-        <div>
-          <button type="submit">Save symptom entry</button>
         </div>
+
+        {/* Save */}
+        <button type="submit" className="btn-primary" style={{ marginTop: '4px' }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
+            <polyline points="17 21 17 13 7 13 7 21" />
+            <polyline points="7 3 7 8 15 8" />
+          </svg>
+          Save entry
+        </button>
+
+        <p style={{ textAlign: 'center', fontSize: '12px', color: 'var(--color-text-muted)', fontWeight: 500 }}>
+          🔒 Saved locally on your device
+        </p>
       </form>
     </div>
   )

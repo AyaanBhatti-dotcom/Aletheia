@@ -10,12 +10,53 @@ import SymptomLogPage from './pages/SymptomLogPage.jsx'
 import PeriodTrackerPage from './pages/PeriodTrackerPage.jsx'
 
 const navItems = [
-  { to: '/', label: 'Dashboard' },
-  { to: '/log', label: 'Symptom log' },
-  { to: '/tracker', label: 'Period tracker' },
-  { to: '/insights', label: 'Insights' },
-  { to: '/faq', label: 'FAQ' },
-  { to: '/settings', label: 'Settings', hasIcon: true },
+  {
+    to: '/',
+    label: 'Home',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 12L5 10M5 10L12 3L19 10M5 10V20a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1V10" />
+      </svg>
+    ),
+  },
+  {
+    to: '/log',
+    label: 'Log',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5" />
+        <path d="M17.5 3.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 7.5-7.5z" />
+      </svg>
+    ),
+  },
+  {
+    to: '/tracker',
+    label: 'Cycle',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 22a7 7 0 007-7c0-5-7-13-7-13S5 10 5 15a7 7 0 007 7z" />
+      </svg>
+    ),
+  },
+  {
+    to: '/insights',
+    label: 'Insights',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M18 20V10M12 20V4M6 20v-6" />
+      </svg>
+    ),
+  },
+  {
+    to: '/settings',
+    label: 'Settings',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="3" />
+        <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
+      </svg>
+    ),
+  },
 ]
 
 const ONBOARDING_STORAGE_KEY = 'aletheia-onboarding-complete'
@@ -31,7 +72,6 @@ function App() {
     if (enableDemoMode && !isDemoMode) {
       toggleDemo()
     }
-
     localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true')
     setShowOnboarding(false)
   }
@@ -41,28 +81,39 @@ function App() {
       {showOnboarding && (
         <div className="onboarding-screen">
           <div className="onboarding-panel">
-            <div className="onboarding-mark" aria-hidden="true" />
+            <div className="onboarding-orb" aria-hidden="true" />
             <p className="onboarding-kicker">Aletheia</p>
-            <h1 className="onboarding-title">A private place to understand your cycle and pain patterns.</h1>
+            <h1 className="onboarding-title">A private place to understand your body.</h1>
             <p className="onboarding-copy">
-              Track symptoms, log cycle changes, and review insights stored locally in this browser.
+              Track symptoms, log cycle changes, and review insights — stored entirely on this device.
             </p>
             <div className="onboarding-actions">
-              <button type="button" onClick={() => completeOnboarding(false)}>
+              <button type="button" className="btn-primary" onClick={() => completeOnboarding(false)}>
                 Get started
               </button>
               <button
                 type="button"
-                className="button-secondary"
+                className="btn-secondary"
                 onClick={() => completeOnboarding(true)}
               >
                 Try demo
               </button>
             </div>
+            <div className="onboarding-footer">
+              <span className="privacy-badge">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0110 0v4" />
+                </svg>
+                Stored locally · never uploaded
+              </span>
+            </div>
           </div>
         </div>
       )}
-      {isDemoMode && <div className="demo-banner">Demo mode</div>}
+
+      {isDemoMode && <div className="demo-banner">Demo mode active</div>}
+
       <main className="page-content">
         <div key={location.pathname} className="route-stage">
           <Routes location={location}>
@@ -76,7 +127,7 @@ function App() {
         </div>
       </main>
 
-      <nav className="bottom-nav" aria-label="Primary">
+      <nav className="bottom-nav" aria-label="Primary navigation">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
@@ -86,28 +137,8 @@ function App() {
               isActive ? 'bottom-nav__link bottom-nav__link--active' : 'bottom-nav__link'
             }
           >
-            {item.hasIcon ? (
-              <span className="bottom-nav__content">
-                <svg
-                  className="bottom-nav__icon"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                  focusable="false"
-                >
-                  <path
-                    d="M12 3.5 13.6 5.6 16.2 5.3 16.8 7.8 19.3 9 18.1 11.3 19.3 13.7 16.8 14.9 16.2 17.4 13.6 17.1 12 19.2 10.4 17.1 7.8 17.4 7.2 14.9 4.7 13.7 5.9 11.3 4.7 9 7.2 7.8 7.8 5.3 10.4 5.6Z"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinejoin="round"
-                  />
-                  <circle cx="12" cy="11.3" r="2.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                </svg>
-                <span>{item.label}</span>
-              </span>
-            ) : (
-              item.label
-            )}
+            <span className="bottom-nav__icon" aria-hidden="true">{item.icon}</span>
+            <span>{item.label}</span>
           </NavLink>
         ))}
       </nav>

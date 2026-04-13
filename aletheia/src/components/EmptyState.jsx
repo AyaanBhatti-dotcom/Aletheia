@@ -2,30 +2,28 @@ function EmptyState({ description, title }) {
   return (
     <div className="empty-state">
       <svg
-        className="empty-state__illustration"
-        viewBox="0 0 240 160"
+        width="80"
+        height="80"
+        viewBox="0 0 80 80"
+        fill="none"
         aria-hidden="true"
         focusable="false"
       >
-        <circle cx="120" cy="80" r="52" fill="var(--color-accent)" opacity="0.45" />
-        <circle cx="120" cy="80" r="28" fill="none" stroke="var(--color-primary)" strokeWidth="2" />
+        <circle cx="40" cy="40" r="36" fill="var(--color-accent)" />
+        <circle cx="40" cy="40" r="20" fill="var(--color-accent-mid)" />
+        <circle cx="40" cy="40" r="8" fill="var(--color-primary-light)" opacity="0.6" />
         <path
-          d="M84 112c14-12 27-18 36-18s22 6 36 18"
-          fill="none"
-          stroke="var(--color-primary-light)"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-        <path
-          d="M108 72c4-7 8-11 12-11s8 4 12 11"
-          fill="none"
+          d="M28 54c4-6 7-9 12-9s8 3 12 9"
           stroke="var(--color-primary)"
           strokeWidth="2"
           strokeLinecap="round"
+          fill="none"
         />
+        <circle cx="33" cy="36" r="2.5" fill="var(--color-primary)" opacity="0.6" />
+        <circle cx="47" cy="36" r="2.5" fill="var(--color-primary)" opacity="0.6" />
       </svg>
-      <h2 style={{ margin: 0 }}>{title}</h2>
-      <p style={{ margin: 0 }}>{description}</p>
+      <p className="empty-state__title">{title}</p>
+      <p className="empty-state__desc">{description}</p>
     </div>
   )
 }

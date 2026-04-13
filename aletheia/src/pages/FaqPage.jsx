@@ -55,7 +55,10 @@ const faqItems = [
 
 function FaqItem({ answer, index, isOpen, onToggle, question }) {
   return (
-    <div className="card" style={{ padding: 0 }}>
+    <div
+      className="card"
+      style={{ padding: 0, overflow: 'hidden' }}
+    >
       <button
         type="button"
         onClick={onToggle}
@@ -66,15 +69,59 @@ function FaqItem({ answer, index, isOpen, onToggle, question }) {
           textAlign: 'left',
           background: 'transparent',
           color: 'var(--color-text)',
-          padding: '20px',
-          borderRadius: 'var(--radius)',
+          padding: '18px 20px',
+          borderRadius: isOpen ? 'var(--radius-xl) var(--radius-xl) 0 0' : 'var(--radius-xl)',
+          font: '500 15px var(--font-body)',
+          lineHeight: 1.5,
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '14px',
+          cursor: 'pointer',
+          transition: 'background 180ms ease',
+          border: 'none',
         }}
+        onMouseOver={(e) => { if (!isOpen) e.currentTarget.style.background = 'var(--color-accent)' }}
+        onMouseOut={(e) => { e.currentTarget.style.background = 'transparent' }}
+        onFocus={(e) => { e.currentTarget.style.background = 'var(--color-accent)' }}
+        onBlur={(e) => { e.currentTarget.style.background = 'transparent' }}
       >
-        {question}
+        <span
+          style={{
+            flexShrink: 0,
+            width: 22,
+            height: 22,
+            borderRadius: '50%',
+            background: isOpen ? 'var(--color-primary)' : 'var(--color-accent)',
+            border: `1.5px solid ${isOpen ? 'var(--color-primary)' : 'var(--color-border)'}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginTop: '1px',
+            transition: 'all 180ms ease',
+            color: isOpen ? '#fff' : 'var(--color-text-muted)',
+            fontSize: '12px',
+            fontWeight: 700,
+          }}
+          aria-hidden="true"
+        >
+          {isOpen ? '−' : '+'}
+        </span>
+        <span style={{ fontWeight: isOpen ? 600 : 500 }}>{question}</span>
       </button>
+
       {isOpen && (
-        <div id={`faq-answer-${index}`} style={{ padding: '0 20px 20px' }}>
-          <p style={{ margin: 0 }}>{answer}</p>
+        <div
+          id={`faq-answer-${index}`}
+          style={{
+            padding: '0 20px 20px 56px',
+            fontSize: '14px',
+            lineHeight: 1.65,
+            color: 'var(--color-text-muted)',
+            fontWeight: 500,
+            animation: 'fade-up 180ms ease both',
+          }}
+        >
+          {answer}
         </div>
       )}
     </div>
@@ -85,12 +132,16 @@ function FaqPage() {
   const [openIndex, setOpenIndex] = useState(null)
 
   return (
-    <div style={{ width: '100%', maxWidth: '840px', display: 'grid', gap: '20px' }}>
-      <div className="card">
-        <h1 style={{ margin: 0 }}>FAQ</h1>
+    <div style={{ width: '100%', maxWidth: '680px', display: 'grid', gap: '14px' }}>
+
+      <div style={{ paddingBottom: '4px' }}>
+        <h1 style={{ marginBottom: '6px' }}>Doctor guide</h1>
+        <p style={{ fontSize: '14px', color: 'var(--color-text-muted)', fontWeight: 500 }}>
+          Questions to help you prepare for appointments.
+        </p>
       </div>
 
-      <div style={{ display: 'grid', gap: '16px' }}>
+      <div style={{ display: 'grid', gap: '10px' }}>
         {faqItems.map((item, index) => (
           <FaqItem
             key={item.question}
