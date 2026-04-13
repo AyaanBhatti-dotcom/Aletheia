@@ -114,7 +114,14 @@ function App() {
         </div>
       )}
 
-      {isDemoMode && <div className="demo-banner">Demo mode active</div>}
+      {isDemoMode && (
+        <div className="demo-banner">
+          <span>Demo mode active</span>
+          <button type="button" className="demo-banner__button" onClick={toggleDemo}>
+            Exit demo
+          </button>
+        </div>
+      )}
 
       <main className="page-content">
         <div key={location.pathname} className="route-stage">
