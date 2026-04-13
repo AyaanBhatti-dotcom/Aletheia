@@ -5,6 +5,7 @@ import { generateKey } from '../crypto/crypto.js'
 
 const SESSION_KEY_STORAGE = 'aletheia-derived-key'
 const ONBOARDING_STORAGE_KEY = 'aletheia-onboarding-complete'
+const REPLAY_TOUR_EVENT = 'aletheia:replay-tour'
 
 function downloadJsonFile(data, filename) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
@@ -41,7 +42,7 @@ function SettingsPage() {
 
   function handleReplayWelcomeTour() {
     localStorage.removeItem(ONBOARDING_STORAGE_KEY)
-    window.location.assign('/')
+    window.dispatchEvent(new Event(REPLAY_TOUR_EVENT))
   }
 
   async function handleActivateEncryption(event) {

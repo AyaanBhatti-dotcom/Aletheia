@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import './App.css'
 import { useDemo } from './context/DemoContext.jsx'
@@ -62,6 +62,7 @@ const navItems = [
 ]
 
 const ONBOARDING_STORAGE_KEY = 'aletheia-onboarding-complete'
+const REPLAY_TOUR_EVENT = 'aletheia:replay-tour'
 const tourSteps = [
   {
     eyebrow: 'Welcome',
@@ -123,11 +124,26 @@ function App() {
   )
   const [tourStep, setTourStep] = useState(0)
 
+  useEffect(() => {
+    function handleReplayTour() {
+      localStorage.removeItem(ONBOARDING_STORAGE_KEY)
+      setTourStep(0)
+      setShowOnboarding(true)
+    }
+
+    window.addEventListener(REPLAY_TOUR_EVENT, handleReplayTour)
+
+    return () => {
+      window.removeEventListener(REPLAY_TOUR_EVENT, handleReplayTour)
+    }
+  }, [])
+
   function completeOnboarding(enableDemoMode) {
     if (enableDemoMode && !isDemoMode) {
       toggleDemo()
     }
     localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true')
+    setTourStep(0)
     setShowOnboarding(false)
   }
 
