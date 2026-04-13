@@ -206,7 +206,8 @@ export const cycleEntries = Array.from({ length: 60 }, (_, offset) => {
     discharge: getDischarge(cycleDay, flowLevel),
     breastTenderness: getScaleValue(cycleDay >= 21 ? 2 : 0, offset),
     bloating: getScaleValue(flowLevel === 'none' ? 1 : 2, offset + 1),
-    cervicalPain: getScaleValue(flareOffsets.has(offset) ? 2 : 1, offset),
+    pelvicPain: getScaleValue(flareOffsets.has(offset) ? 2 : 1, offset),
+    systemicPain: getScaleValue(flareOffsets.has(offset) ? 1 : 0, offset + 1),
     cycleDay,
   }
 })

@@ -78,6 +78,18 @@ const tourSteps = [
     ],
   },
   {
+    eyebrow: 'Install',
+    title: 'Add Aletheia to your iPhone home screen.',
+    body:
+      'In Safari, tap Share, then choose Add to Home Screen to open Aletheia like a real app with its own icon.',
+    route: '/',
+    target: 'dashboard-hero',
+    highlights: [
+      'This works best from Safari on iPhone or iPad.',
+      'Launching from the home screen gives you a cleaner, app-like experience.',
+    ],
+  },
+  {
     eyebrow: 'Track',
     title: 'Log symptoms and cycle changes day by day.',
     body:

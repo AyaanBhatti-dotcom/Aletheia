@@ -338,7 +338,8 @@ function getDefaultFormState(dateValue) {
     discharge: 'none',
     breastTenderness: 0,
     bloating: 0,
-    cervicalPain: 0,
+    pelvicPain: 0,
+    systemicPain: 0,
     cycleDay: '',
   }
 }
@@ -356,7 +357,8 @@ function getFormStateFromEntry(entry, dateValue) {
     discharge: entry.discharge || 'none',
     breastTenderness: entry.breastTenderness ?? 0,
     bloating: entry.bloating ?? 0,
-    cervicalPain: entry.cervicalPain ?? 0,
+    pelvicPain: entry.pelvicPain ?? entry.cervicalPain ?? 0,
+    systemicPain: entry.systemicPain ?? 0,
     cycleDay: entry.cycleDay === '' || entry.cycleDay === undefined ? '' : String(entry.cycleDay),
   }
 }
@@ -499,7 +501,8 @@ function PeriodTrackerPage() {
       discharge: formState.discharge,
       breastTenderness: formState.breastTenderness,
       bloating: formState.bloating,
-      cervicalPain: formState.cervicalPain,
+      pelvicPain: formState.pelvicPain,
+      systemicPain: formState.systemicPain,
       cycleDay: formState.cycleDay === '' ? '' : Number(formState.cycleDay),
     })
 
@@ -790,10 +793,17 @@ function PeriodTrackerPage() {
         />
 
         <ScaleField
-          id="cervical-pain"
-          label="Cervical pain"
-          value={formState.cervicalPain}
-          onChange={(value) => updateForm({ cervicalPain: value })}
+          id="pelvic-pain"
+          label="Pelvic pain"
+          value={formState.pelvicPain}
+          onChange={(value) => updateForm({ pelvicPain: value })}
+        />
+
+        <ScaleField
+          id="systemic-pain"
+          label="Systemic pain"
+          value={formState.systemicPain}
+          onChange={(value) => updateForm({ systemicPain: value })}
         />
 
         <button type="submit" className="btn-primary" style={{ marginTop: '4px' }}>

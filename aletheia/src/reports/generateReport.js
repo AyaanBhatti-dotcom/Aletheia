@@ -396,7 +396,7 @@ export function generateReport(symptomEntries, cycleEntries, dateRange) {
       formatDate(entry.date, { month: 'short', day: 'numeric', year: 'numeric' }),
       entry.flowLevel || '—',
       entry.cycleDay ?? '—',
-      `Breast ${entry.breastTenderness ?? '—'}  •  Bloating ${entry.bloating ?? '—'}  •  Cervical ${entry.cervicalPain ?? '—'}`,
+      `Breast ${entry.breastTenderness ?? '—'}  •  Bloating ${entry.bloating ?? '—'}  •  Pelvic ${entry.pelvicPain ?? entry.cervicalPain ?? '—'}  •  Systemic ${entry.systemicPain ?? '—'}`,
     ]),
   )
 
