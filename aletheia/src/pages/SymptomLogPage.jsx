@@ -1,5 +1,10 @@
-import { useState } from 'react'
-import { saveSymptomEntry } from '../db/db.js'
+import { useEffect, useState } from 'react'
+import EmptyState from '../components/EmptyState.jsx'
+import LoadingSpinner from '../components/LoadingSpinner.jsx'
+import DOMPurify from 'dompurify'
+import { getSymptomEntries, saveSymptomEntry } from '../db/db.js'
+import { useDemo } from '../context/DemoContext.jsx'
+import { symptomEntries as demoSymptomEntries } from '../demo/demoData.js'
 
 const USER_SYMPTOMS_STORAGE_KEY = 'userSymptoms'
 
@@ -72,6 +77,7 @@ function getStoredUserSymptoms() {
 }
 
 function SymptomLogPage() {
+  const { isDemoMode } = useDemo()
   const [dateTime, setDateTime] = useState(formatNowForDateTimeInput)
   const [painScale, setPainScale] = useState(1)
   const [painTypes, setPainTypes] = useState([])
@@ -81,6 +87,28 @@ function SymptomLogPage() {
   const [newSymptom, setNewSymptom] = useState('')
   const [notes, setNotes] = useState('')
   const [photo, setPhoto] = useState(null)
+  const [hasEntries, setHasEntries] = useState(false)
+  const [loadedSource, setLoadedSource] = useState('')
+  const sourceKey = isDemoMode ? 'demo' : 'db'
+
+  useEffect(() => {
+    let isMounted = true
+
+    const entriesPromise = isDemoMode ? Promise.resolve(demoSymptomEntries) : getSymptomEntries()
+
+    entriesPromise.then((entries) => {
+      if (!isMounted) {
+        return
+      }
+
+      setHasEntries(entries.length > 0)
+      setLoadedSource(sourceKey)
+    })
+
+    return () => {
+      isMounted = false
+    }
+  }, [isDemoMode, sourceKey])
 
   function toggleValue(value, setValues) {
     setValues((currentValues) =>
@@ -126,16 +154,26 @@ function SymptomLogPage() {
       painScale,
       painTypes,
       bodyAreas,
-      userSymptoms: selectedUserSymptoms,
-      notes,
+      userSymptoms: selectedUserSymptoms.map((symptom) => DOMPurify.sanitize(symptom)),
+      notes: DOMPurify.sanitize(notes),
       photo,
     })
+  }
+
+  if (loadedSource !== sourceKey) {
+    return <LoadingSpinner />
   }
 
   return (
     <div style={{ width: '100%', maxWidth: '720px' }}>
       <form className="card" onSubmit={handleSubmit} style={{ display: 'grid', gap: '24px' }}>
         <h1>Symptom log</h1>
+        {!hasEntries && (
+          <EmptyState
+            title="Your symptom history starts here"
+            description="Log your first entry to begin building a clearer picture of pain patterns over time."
+          />
+        )}
 
         <label style={{ display: 'grid', gap: '8px' }}>
           <span>Date/time</span>

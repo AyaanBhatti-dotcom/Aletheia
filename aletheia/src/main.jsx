@@ -4,11 +4,14 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App.jsx'
+import { DemoProvider } from './context/DemoContext.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+    <DemoProvider>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </DemoProvider>
   </StrictMode>,
 )

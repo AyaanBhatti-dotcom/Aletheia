@@ -80,7 +80,7 @@ export async function generateKey(passphrase, salt) {
       name: 'AES-GCM',
       length: KEY_LENGTH,
     },
-    false,
+    true,
     ['encrypt', 'decrypt'],
   )
 }
