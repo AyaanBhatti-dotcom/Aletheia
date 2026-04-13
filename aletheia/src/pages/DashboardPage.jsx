@@ -31,6 +31,18 @@ function formatDate(value) {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
+function formatDateTime(value) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return String(value)
+  return date.toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
+
 function PainDot({ score }) {
   const color = PAIN_COLORS[Math.min(Math.max(score, 1), 10)] || '#ccc'
   return (
@@ -92,10 +104,25 @@ function DashboardPage() {
     .filter((e) => { const d = getDaysAgo(e.date); return d !== null && d <= 35 })
     .sort((a, b) => new Date(b.date) - new Date(a.date))[0]
 
-  const recentSymptomEntries = [...symptomEntries]
+  const sortedSymptomEntries = [...symptomEntries]
     .filter((e) => e.dateTime)
     .sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime))
-    .slice(0, 7)
+  const sortedCycleEntries = [...cycleEntries]
+    .filter((e) => e.date)
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+
+  const allEntries = [
+    ...sortedSymptomEntries.map((entry) => ({
+      type: 'symptom',
+      timestamp: entry.dateTime,
+      entry,
+    })),
+    ...sortedCycleEntries.map((entry) => ({
+      type: 'cycle',
+      timestamp: entry.date,
+      entry,
+    })),
+  ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
 
   const avgPain = averagePainLast30Days(symptomEntries)
 
@@ -169,36 +196,82 @@ function DashboardPage() {
         </button>
       </div>
 
-      {/* Recent entries */}
+      {/* Detailed entry history */}
       <div className="card" style={{ padding: '20px 22px' }}>
-        <h2 style={{ marginBottom: '16px' }}>Recent entries</h2>
-        {recentSymptomEntries.length > 0 ? (
-          <div style={{ display: 'grid', gap: '0' }}>
-            {recentSymptomEntries.map((entry, i) => (
+        <h2 style={{ marginBottom: '16px' }}>Entry history</h2>
+        {allEntries.length > 0 ? (
+          <div style={{ display: 'grid', gap: '12px' }}>
+            {allEntries.map(({ type, entry }, i) => (
               <div
-                key={entry.id || entry.dateTime}
+                key={entry.id || `${type}-${entry.dateTime || entry.date}-${i}`}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '11px 0',
-                  borderBottom: i < recentSymptomEntries.length - 1 ? '1px solid var(--color-border)' : 'none',
+                  display: 'grid',
+                  gap: '8px',
+                  padding: '14px',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius)',
+                  background: 'var(--color-accent)',
                 }}
               >
-                <PainDot score={entry.painScale} />
-                <span style={{ flex: 1, fontSize: '14px', fontWeight: 500, color: 'var(--color-text)' }}>
-                  {formatDate(entry.dateTime)}
-                </span>
-                <span style={{
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  color: PAIN_COLORS[Math.min(Math.max(entry.painScale, 1), 10)],
-                  background: 'var(--color-accent)',
-                  padding: '3px 10px',
-                  borderRadius: 'var(--radius-pill)',
-                }}>
-                  {entry.painScale}/10
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--color-text)' }}>
+                    {type === 'symptom' ? 'Symptom log' : 'Cycle log'}
+                  </span>
+                  <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', fontWeight: 600 }}>
+                    {type === 'symptom' ? formatDateTime(entry.dateTime) : formatDate(entry.date)}
+                  </span>
+                </div>
+
+                {type === 'symptom' ? (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <PainDot score={entry.painScale} />
+                      <span style={{
+                        fontSize: '13px',
+                        fontWeight: 700,
+                        color: PAIN_COLORS[Math.min(Math.max(entry.painScale, 1), 10)],
+                      }}>
+                        Pain: {entry.painScale}/10
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '13px', color: 'var(--color-text-muted)', fontWeight: 500 }}>
+                      Pain types: {entry.painTypes?.length ? entry.painTypes.join(', ') : 'None logged'}
+                    </div>
+                    <div style={{ fontSize: '13px', color: 'var(--color-text-muted)', fontWeight: 500 }}>
+                      Body areas: {entry.bodyAreas?.length ? entry.bodyAreas.join(', ') : 'None logged'}
+                    </div>
+                    <div style={{ fontSize: '13px', color: 'var(--color-text-muted)', fontWeight: 500 }}>
+                      Custom symptoms: {entry.userSymptoms?.length ? entry.userSymptoms.join(', ') : 'None logged'}
+                    </div>
+                    <div style={{ fontSize: '13px', color: 'var(--color-text-muted)', fontWeight: 500 }}>
+                      Notes: {entry.notes?.trim() ? entry.notes : 'No notes'}
+                    </div>
+                    <div style={{ fontSize: '13px', color: 'var(--color-text-muted)', fontWeight: 500 }}>
+                      Photo attached: {entry.photo ? 'Yes' : 'No'}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ fontSize: '13px', color: 'var(--color-text-muted)', fontWeight: 500 }}>
+                      Cycle day: {entry.cycleDay || 'Not set'}
+                    </div>
+                    <div style={{ fontSize: '13px', color: 'var(--color-text-muted)', fontWeight: 500 }}>
+                      Flow: {entry.flowLevel || 'Not set'}
+                    </div>
+                    <div style={{ fontSize: '13px', color: 'var(--color-text-muted)', fontWeight: 500 }}>
+                      Blood color: {entry.bloodColor || 'Not set'}
+                    </div>
+                    <div style={{ fontSize: '13px', color: 'var(--color-text-muted)', fontWeight: 500 }}>
+                      Clots: {entry.clots || 'Not set'}
+                    </div>
+                    <div style={{ fontSize: '13px', color: 'var(--color-text-muted)', fontWeight: 500 }}>
+                      Discharge: {entry.discharge || 'Not set'}
+                    </div>
+                    <div style={{ fontSize: '13px', color: 'var(--color-text-muted)', fontWeight: 500 }}>
+                      Tenderness/Bloating/Cervical pain: {entry.breastTenderness ?? 0}/{entry.bloating ?? 0}/{entry.cervicalPain ?? 0}
+                    </div>
+                  </>
+                )}
               </div>
             ))}
           </div>

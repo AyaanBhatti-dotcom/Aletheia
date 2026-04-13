@@ -137,3 +137,55 @@ export async function clearAllData() {
     })
   })
 }
+
+export async function importAllData(data) {
+  const symptomEntries = Array.isArray(data?.symptomEntries) ? data.symptomEntries : []
+  const cycleEntries = Array.isArray(data?.cycleEntries) ? data.cycleEntries : []
+
+  return runTransaction([SYMPTOM_STORE, CYCLE_STORE], 'readwrite', (transaction, resolve, reject) => {
+    const symptomStore = transaction.objectStore(SYMPTOM_STORE)
+    const cycleStore = transaction.objectStore(CYCLE_STORE)
+
+    let pending = 2 + symptomEntries.length + cycleEntries.length
+
+    function handleDone() {
+      pending -= 1
+      if (pending === 0) {
+        resolve({
+          symptomCount: symptomEntries.length,
+          cycleCount: cycleEntries.length,
+        })
+      }
+    }
+
+    function handleError(error) {
+      reject(error)
+    }
+
+    const clearSymptomsRequest = symptomStore.clear()
+    clearSymptomsRequest.addEventListener('success', handleDone)
+    clearSymptomsRequest.addEventListener('error', () => handleError(clearSymptomsRequest.error))
+
+    const clearCyclesRequest = cycleStore.clear()
+    clearCyclesRequest.addEventListener('success', handleDone)
+    clearCyclesRequest.addEventListener('error', () => handleError(clearCyclesRequest.error))
+
+    symptomEntries.forEach((entry) => {
+      const request = symptomStore.add({
+        ...entry,
+        id: entry?.id || crypto.randomUUID(),
+      })
+      request.addEventListener('success', handleDone)
+      request.addEventListener('error', () => handleError(request.error))
+    })
+
+    cycleEntries.forEach((entry) => {
+      const request = cycleStore.add({
+        ...entry,
+        id: entry?.id || crypto.randomUUID(),
+      })
+      request.addEventListener('success', handleDone)
+      request.addEventListener('error', () => handleError(request.error))
+    })
+  })
+}

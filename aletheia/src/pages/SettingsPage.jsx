@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { clearAllData, getCycleEntries, getSymptomEntries } from '../db/db.js'
+import { clearAllData, getCycleEntries, getSymptomEntries, importAllData } from '../db/db.js'
 import { generateKey } from '../crypto/crypto.js'
 
 const SESSION_KEY_STORAGE = 'aletheia-derived-key'
@@ -36,13 +36,23 @@ function SettingsPage() {
   const [isEncryptionActive, setIsEncryptionActive] = useState(
     Boolean(sessionStorage.getItem(SESSION_KEY_STORAGE)),
   )
+  const [statusMessage, setStatusMessage] = useState('')
 
   async function handleActivateEncryption(event) {
     event.preventDefault()
+    if (!passphrase.trim()) return
     const key = await generateKey(passphrase)
     const exportedKey = await crypto.subtle.exportKey('jwk', key)
     sessionStorage.setItem(SESSION_KEY_STORAGE, JSON.stringify(exportedKey))
     setIsEncryptionActive(true)
+    setStatusMessage('Session encryption activated.')
+  }
+
+  function handleDeactivateEncryption() {
+    sessionStorage.removeItem(SESSION_KEY_STORAGE)
+    setIsEncryptionActive(false)
+    setPassphrase('')
+    setStatusMessage('Session encryption deactivated.')
   }
 
   async function handleExportData() {
@@ -59,6 +69,30 @@ function SettingsPage() {
     )
     if (!confirmed) return
     await clearAllData()
+    setStatusMessage('All data cleared.')
+  }
+
+  async function handleImportData(event) {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    try {
+      const rawText = await file.text()
+      const parsed = JSON.parse(rawText)
+      const symptomEntries = Array.isArray(parsed?.symptomEntries) ? parsed.symptomEntries : null
+      const cycleEntries = Array.isArray(parsed?.cycleEntries) ? parsed.cycleEntries : null
+
+      if (!symptomEntries || !cycleEntries) {
+        throw new Error('Invalid data format')
+      }
+
+      const result = await importAllData(parsed)
+      setStatusMessage(`Import complete: ${result.symptomCount} symptom entries and ${result.cycleCount} cycle entries restored.`)
+    } catch {
+      setStatusMessage('Import failed. Please choose a valid Aletheia export JSON file.')
+    } finally {
+      event.target.value = ''
+    }
   }
 
   return (
@@ -130,6 +164,11 @@ function SettingsPage() {
           <button type="submit" className="btn-primary">
             Activate encryption
           </button>
+          {isEncryptionActive && (
+            <button type="button" className="btn-secondary" onClick={handleDeactivateEncryption}>
+              Deactivate encryption
+            </button>
+          )}
         </form>
 
         <div style={{
@@ -173,6 +212,32 @@ function SettingsPage() {
         </button>
       </SettingsSection>
 
+      {/* Import */}
+      <SettingsSection
+        title="Import data"
+        description="Restore entries from a previously exported JSON file. This replaces current data."
+      >
+        <label
+          className="btn-secondary"
+          style={{ width: '100%', minHeight: 52, justifyContent: 'center', cursor: 'pointer' }}
+          htmlFor="import-json"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+          Import JSON
+          <input
+            id="import-json"
+            type="file"
+            accept="application/json,.json"
+            onChange={handleImportData}
+            style={{ display: 'none' }}
+          />
+        </label>
+      </SettingsSection>
+
       {/* Doctor guide link */}
       <SettingsSection
         title="Doctor guide"
@@ -205,6 +270,21 @@ function SettingsPage() {
           Clear all data
         </button>
       </SettingsSection>
+
+      {statusMessage && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="card"
+          style={{
+            fontSize: '13px',
+            fontWeight: 600,
+            color: 'var(--color-text-muted)',
+          }}
+        >
+          {statusMessage}
+        </div>
+      )}
     </div>
   )
 }
