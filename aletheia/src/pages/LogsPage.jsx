@@ -79,6 +79,7 @@ function LogsPage() {
       {entries.length > 0 ? (
         <div
           style={{ display: 'grid', gap: '12px' }}
+          data-tour-target="logs-list"
           className={isTourOpen && activeTourTarget === 'logs-list' ? 'tour-highlight' : ''}
         >
           {entries.map((entry) => (

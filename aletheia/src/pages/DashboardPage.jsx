@@ -144,6 +144,7 @@ function DashboardPage() {
     <div className="landing-shell">
       <section className="landing-hero">
         <div
+          data-tour-target="dashboard-hero"
           className={`landing-hero__copy${isTourOpen && activeTourTarget === 'dashboard-hero' ? ' tour-highlight' : ''}`}
         >
           <span className="landing-kicker">Aletheia</span>
@@ -163,6 +164,7 @@ function DashboardPage() {
             )}
             <button
               type="button"
+              data-tour-target="dashboard-export"
               className={`btn-secondary${isTourOpen && activeTourTarget === 'dashboard-export' ? ' tour-highlight' : ''}`}
               onClick={() => generateReport(symptomEntries, cycleEntries, getLast90DayRange())}
             >

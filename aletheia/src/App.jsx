@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import './App.css'
 import { useDemo } from './context/DemoContext.jsx'
@@ -155,10 +155,15 @@ function App() {
   const { isDemoMode, toggleDemo } = useDemo()
   const location = useLocation()
   const navigate = useNavigate()
+  const panelRef = useRef(null)
   const [showOnboarding, setShowOnboarding] = useState(
     () => !localStorage.getItem(ONBOARDING_STORAGE_KEY),
   )
   const [tourStep, setTourStep] = useState(0)
+  const [tourOverlayStyle, setTourOverlayStyle] = useState({
+    panel: null,
+    scrim: null,
+  })
 
   useEffect(() => {
     if (!showOnboarding) {
@@ -186,6 +191,100 @@ function App() {
     }
   }, [])
 
+  useLayoutEffect(() => {
+    if (!showOnboarding) {
+      return
+    }
+
+    function updateTourLayout() {
+      const activeTarget = tourSteps[tourStep]?.target
+      const targetNode = activeTarget
+        ? document.querySelector(`[data-tour-target="${activeTarget}"]`)
+        : null
+      const panelNode = panelRef.current
+
+      if (!panelNode || !targetNode) {
+        setTourOverlayStyle({
+          panel: null,
+          scrim: null,
+        })
+        return
+      }
+
+      targetNode.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'center',
+      })
+
+      const viewportWidth = window.innerWidth
+      const viewportHeight = window.innerHeight
+      const gap = 24
+      const margin = 20
+      const targetRect = targetNode.getBoundingClientRect()
+      const panelRect = panelNode.getBoundingClientRect()
+      const spaceRight = viewportWidth - targetRect.right - margin
+      const spaceLeft = targetRect.left - margin
+      const spaceAbove = targetRect.top - margin
+      const spaceBelow = viewportHeight - targetRect.bottom - margin
+      const canFitRight = spaceRight >= panelRect.width + gap
+      const canFitLeft = spaceLeft >= panelRect.width + gap
+      const canFitBelow = spaceBelow >= panelRect.height + gap
+      const canFitAbove = spaceAbove >= panelRect.height + gap
+
+      let top = (viewportHeight - panelRect.height) / 2
+      let left = (viewportWidth - panelRect.width) / 2
+
+      if (viewportWidth >= 900 && (canFitRight || canFitLeft)) {
+        left = canFitRight
+          ? targetRect.right + gap
+          : Math.max(margin, targetRect.left - panelRect.width - gap)
+        top = Math.min(
+          Math.max(margin, targetRect.top),
+          viewportHeight - panelRect.height - margin,
+        )
+      } else if (canFitBelow || canFitAbove) {
+        top = canFitBelow
+          ? targetRect.bottom + gap
+          : Math.max(margin, targetRect.top - panelRect.height - gap)
+        left = Math.min(
+          Math.max(margin, targetRect.left + targetRect.width / 2 - panelRect.width / 2),
+          viewportWidth - panelRect.width - margin,
+        )
+      } else {
+        top = viewportHeight - panelRect.height - margin
+        left = Math.min(
+          Math.max(margin, targetRect.left + targetRect.width / 2 - panelRect.width / 2),
+          viewportWidth - panelRect.width - margin,
+        )
+      }
+
+      const focusPadding = 22
+      const focusX = targetRect.left + targetRect.width / 2
+      const focusY = targetRect.top + targetRect.height / 2
+      const focusRadius = Math.max(targetRect.width, targetRect.height) / 2 + focusPadding
+
+      setTourOverlayStyle({
+        panel: {
+          top: `${Math.round(top)}px`,
+          left: `${Math.round(left)}px`,
+        },
+        scrim: {
+          '--tour-focus-x': `${Math.round(focusX)}px`,
+          '--tour-focus-y': `${Math.round(focusY)}px`,
+          '--tour-focus-radius': `${Math.round(focusRadius)}px`,
+        },
+      })
+    }
+
+    updateTourLayout()
+    window.addEventListener('resize', updateTourLayout)
+
+    return () => {
+      window.removeEventListener('resize', updateTourLayout)
+    }
+  }, [location.pathname, showOnboarding, tourStep])
+
   function completeOnboarding(enableDemoMode) {
     if (enableDemoMode && !isDemoMode) {
       toggleDemo()
@@ -206,8 +305,12 @@ function App() {
       <div className="app-shell">
       {showOnboarding && (
         <div className="onboarding-screen">
-          <div className="onboarding-scrim" />
-          <div className="onboarding-panel">
+          <div className="onboarding-scrim" style={tourOverlayStyle.scrim || undefined} />
+          <div
+            ref={panelRef}
+            className="onboarding-panel"
+            style={tourOverlayStyle.panel || undefined}
+          >
             <div className="onboarding-orb" aria-hidden="true" />
             <div className="onboarding-progress">
               {tourSteps.map((step, index) => (

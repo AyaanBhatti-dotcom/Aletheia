@@ -161,6 +161,7 @@ function SettingsPage() {
         <form
           onSubmit={handleActivateEncryption}
           style={{ display: 'grid', gap: '12px' }}
+          data-tour-target="settings-encryption"
           className={isTourOpen && activeTourTarget === 'settings-encryption' ? 'tour-highlight' : ''}
         >
           <div>

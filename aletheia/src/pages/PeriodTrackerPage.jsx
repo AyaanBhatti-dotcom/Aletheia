@@ -312,6 +312,7 @@ function PeriodTrackerPage() {
         )}
 
         <section
+          data-tour-target="cycle-calendar"
           className={`tracker-calendar-shell${isTourOpen && activeTourTarget === 'cycle-calendar' ? ' tour-highlight' : ''}`}
         >
           <div className="tracker-calendar-topline">

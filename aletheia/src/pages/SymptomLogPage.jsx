@@ -163,6 +163,7 @@ function SymptomLogPage() {
       <form
         onSubmit={handleSubmit}
         style={{ display: 'grid', gap: '14px' }}
+        data-tour-target="symptom-form"
         className={isTourOpen && activeTourTarget === 'symptom-form' ? 'tour-highlight' : ''}
       >
 

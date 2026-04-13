@@ -116,6 +116,7 @@ function InsightsPage() {
 
       {/* Average pain — featured */}
       <div
+        data-tour-target="insights-summary"
         className={`card${isTourOpen && activeTourTarget === 'insights-summary' ? ' tour-highlight' : ''}`}
         style={{ display: 'flex', alignItems: 'center', gap: '20px' }}
       >
