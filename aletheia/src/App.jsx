@@ -165,6 +165,8 @@ function App() {
     spotlight: null,
   })
   const [tourPanelDock, setTourPanelDock] = useState('onboarding-panel--right')
+  const currentTourStep = tourSteps[tourStep]
+  const isMobileTour = tourPanelDock === 'onboarding-panel--mobile'
 
   useEffect(() => {
     if (!showOnboarding) {
@@ -203,11 +205,54 @@ function App() {
     let retryTimer = null
     let animationFrame = null
     let animationFrameAfterScroll = null
+    let resizeObserver = null
 
     function clearOverlay() {
       setTourOverlayStyle({
         scrim: null,
         spotlight: null,
+      })
+    }
+
+    function measureLayout(targetNode) {
+      const viewportWidth = window.innerWidth
+      const padding = viewportWidth <= 640 ? 8 : 12
+      const targetRect = targetNode.getBoundingClientRect()
+      const computedStyle = window.getComputedStyle(targetNode)
+      const borderRadius = computedStyle.borderRadius === '0px' ? '18px' : computedStyle.borderRadius
+      const targetCenterX = targetRect.left + targetRect.width / 2
+      const focusX = targetRect.left + targetRect.width / 2
+      const focusY = targetRect.top + targetRect.height / 2
+      const focusRadius = Math.max(targetRect.width, targetRect.height) / 2 + 44
+
+      if (viewportWidth <= 640) {
+        setTourPanelDock('onboarding-panel--mobile')
+        setTourOverlayStyle({
+          scrim: null,
+          spotlight: null,
+        })
+        return
+      }
+
+      setTourPanelDock(
+        targetCenterX > viewportWidth / 2
+          ? 'onboarding-panel--left'
+          : 'onboarding-panel--right',
+      )
+
+      setTourOverlayStyle({
+        scrim: {
+          '--tour-focus-x': `${Math.round(focusX)}px`,
+          '--tour-focus-y': `${Math.round(focusY)}px`,
+          '--tour-focus-radius': `${Math.round(focusRadius)}px`,
+        },
+        spotlight: {
+          top: `${Math.round(targetRect.top - padding)}px`,
+          left: `${Math.round(targetRect.left - padding)}px`,
+          width: `${Math.round(targetRect.width + padding * 2)}px`,
+          height: `${Math.round(targetRect.height + padding * 2)}px`,
+          borderRadius,
+        },
       })
     }
 
@@ -228,8 +273,8 @@ function App() {
       const isMobileViewport = window.innerWidth <= 640
 
       targetNode.scrollIntoView({
-        behavior: 'auto',
-        block: isMobileViewport ? 'start' : 'center',
+        behavior: retries === 0 ? 'smooth' : 'auto',
+        block: isMobileViewport ? 'center' : 'center',
         inline: 'nearest',
       })
 
@@ -238,45 +283,18 @@ function App() {
           if (cancelled) {
             return
           }
-
-          const viewportWidth = window.innerWidth
-          const viewportHeight = window.innerHeight
-          const gap = 24
-          const margin = viewportWidth <= 640 ? 12 : 20
-          const padding = viewportWidth <= 640 ? 8 : 12
-          const targetRect = targetNode.getBoundingClientRect()
-          const computedStyle = window.getComputedStyle(targetNode)
-          const borderRadius = computedStyle.borderRadius === '0px' ? '18px' : computedStyle.borderRadius
-          const targetCenterX = targetRect.left + targetRect.width / 2
-
-          const focusX = targetRect.left + targetRect.width / 2
-          const focusY = targetRect.top + targetRect.height / 2
-          const focusRadius = Math.max(targetRect.width, targetRect.height) / 2 + 44
-
-          setTourPanelDock(
-            viewportWidth <= 640
-              ? 'onboarding-panel--bottom'
-              : targetCenterX > viewportWidth / 2
-                ? 'onboarding-panel--left'
-                : 'onboarding-panel--right',
-          )
-
-          setTourOverlayStyle({
-            scrim: {
-              '--tour-focus-x': `${Math.round(focusX)}px`,
-              '--tour-focus-y': `${Math.round(focusY)}px`,
-              '--tour-focus-radius': `${Math.round(focusRadius)}px`,
-            },
-            spotlight: {
-              top: `${Math.round(targetRect.top - padding)}px`,
-              left: `${Math.round(targetRect.left - padding)}px`,
-              width: `${Math.round(targetRect.width + padding * 2)}px`,
-              height: `${Math.round(targetRect.height + padding * 2)}px`,
-              borderRadius,
-            },
-          })
+          measureLayout(targetNode)
         })
       })
+
+      resizeObserver?.disconnect()
+      resizeObserver = new ResizeObserver(() => {
+        if (!cancelled) {
+          measureLayout(targetNode)
+        }
+      })
+      resizeObserver.observe(targetNode)
+      resizeObserver.observe(panelNode)
 
       return true
     }
@@ -306,15 +324,14 @@ function App() {
 
     scheduleRetry()
     window.addEventListener('resize', scheduleRetry)
-    window.addEventListener('scroll', scheduleRetry, { passive: true })
 
     return () => {
       cancelled = true
       window.removeEventListener('resize', scheduleRetry)
-      window.removeEventListener('scroll', scheduleRetry)
       window.clearTimeout(retryTimer)
       window.cancelAnimationFrame(animationFrame)
       window.cancelAnimationFrame(animationFrameAfterScroll)
+      resizeObserver?.disconnect()
     }
   }, [location.pathname, showOnboarding, tourStep])
 
@@ -335,16 +352,22 @@ function App() {
         isTourOpen: showOnboarding,
       }}
     >
-      <div className="app-shell">
+      <div className={`app-shell${showOnboarding && isMobileTour ? ' app-shell--tour-mobile' : ''}`}>
       {showOnboarding && (
-        <div className="onboarding-screen">
-          <div className="onboarding-scrim" style={tourOverlayStyle.scrim || undefined} />
-          <div className="tour-spotlight" style={tourOverlayStyle.spotlight || undefined} aria-hidden="true" />
+        <div className={`onboarding-screen${isMobileTour ? ' onboarding-screen--mobile' : ''}`}>
+          {!isMobileTour && <div className="onboarding-scrim" style={tourOverlayStyle.scrim || undefined} />}
+          {!isMobileTour && <div className="tour-spotlight" style={tourOverlayStyle.spotlight || undefined} aria-hidden="true" />}
           <div
             ref={panelRef}
             className={`onboarding-panel ${tourPanelDock}`}
           >
-            <div className="onboarding-orb" aria-hidden="true" />
+            {!isMobileTour && <div className="onboarding-orb" aria-hidden="true" />}
+            {isMobileTour && (
+              <div className="onboarding-mobile-meta">
+                <span className="onboarding-mobile-step">Step {tourStep + 1} of {tourSteps.length}</span>
+                <span className="onboarding-mobile-label">{currentTourStep.eyebrow}</span>
+              </div>
+            )}
             <div className="onboarding-progress">
               {tourSteps.map((step, index) => (
                 <span
@@ -353,11 +376,11 @@ function App() {
                 />
               ))}
             </div>
-            <p className="onboarding-kicker">{tourSteps[tourStep].eyebrow}</p>
-            <h1 className="onboarding-title">{tourSteps[tourStep].title}</h1>
-            <p className="onboarding-copy">{tourSteps[tourStep].body}</p>
+            {!isMobileTour && <p className="onboarding-kicker">{currentTourStep.eyebrow}</p>}
+            <h1 className="onboarding-title">{currentTourStep.title}</h1>
+            <p className="onboarding-copy">{currentTourStep.body}</p>
             <div className="onboarding-notes">
-              {tourSteps[tourStep].highlights.map((item) => (
+              {(isMobileTour ? currentTourStep.highlights.slice(0, 1) : currentTourStep.highlights).map((item) => (
                 <div key={item} className="onboarding-note">
                   <span className="onboarding-note__mark" aria-hidden="true" />
                   <span>{item}</span>

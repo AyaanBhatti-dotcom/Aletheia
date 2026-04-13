@@ -7,6 +7,10 @@
   flex-direction: column;
 }
 
+.app-shell--tour-mobile .page-content {
+  padding-top: 164px;
+}
+
 /* ── Onboarding ─────────────────────────────────── */
 
 .onboarding-screen {
@@ -33,7 +37,7 @@
       rgba(32, 26, 43, 0.44) calc(var(--tour-focus-radius, 120px) + 72px)
     );
   pointer-events: none;
-  transition: background-position 180ms ease, background-size 180ms ease;
+  transition: opacity 220ms ease, background 280ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .onboarding-panel {
@@ -48,6 +52,16 @@
   z-index: 50;
   overflow: auto;
   overscroll-behavior: contain;
+  transition:
+    top 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    left 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    right 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    bottom 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    max-height 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    width 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-radius 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 220ms ease;
+  will-change: top, left, right, bottom;
 }
 
 .onboarding-panel--right {
@@ -70,6 +84,40 @@
   max-width: none;
 }
 
+.onboarding-panel--mobile {
+  top: max(12px, env(safe-area-inset-top, 0px));
+  left: 12px;
+  right: 12px;
+  width: auto;
+  max-width: none;
+  max-height: 148px;
+  padding: 14px 14px 12px;
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--color-surface) 92%, white 8%);
+  box-shadow: 0 18px 44px rgba(32, 26, 43, 0.18);
+}
+
+.onboarding-mobile-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.onboarding-mobile-step,
+.onboarding-mobile-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.onboarding-mobile-label {
+  color: var(--color-primary);
+}
+
 .tour-spotlight {
   position: fixed;
   z-index: 44;
@@ -81,12 +129,15 @@
     0 0 0 6px rgba(255, 255, 255, 0.12),
     0 22px 54px rgba(32, 26, 43, 0.24);
   transition:
-    top 220ms ease,
-    left 220ms ease,
-    width 220ms ease,
-    height 220ms ease,
-    border-radius 220ms ease;
+    top 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    left 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    width 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    height 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-radius 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 220ms ease,
+    background-color 220ms ease;
   animation: tour-spotlight-pulse 1.9s ease-in-out infinite;
+  will-change: top, left, width, height;
 }
 
 .onboarding-orb {
@@ -109,12 +160,13 @@
   height: 10px;
   border-radius: 999px;
   background: var(--color-border);
-  transition: transform 180ms ease, background 180ms ease;
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), background 180ms ease, width 220ms ease;
 }
 
 .onboarding-progress__dot--active {
   background: var(--color-primary);
   transform: scale(1.15);
+  width: 22px;
 }
 
 .onboarding-kicker {
@@ -356,10 +408,13 @@
 
 @media (max-width: 640px) {
   .onboarding-screen {
-    padding:
-      max(12px, env(safe-area-inset-top, 0px))
-      12px
-      max(12px, env(safe-area-inset-bottom, 0px));
+    padding: 0;
+  }
+
+  .onboarding-screen--mobile {
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 
   .onboarding-panel {
@@ -375,57 +430,53 @@
   }
 
   .onboarding-progress {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
   }
 
   .onboarding-title {
-    font-size: clamp(1.4rem, 7vw, 2rem);
-    margin-bottom: 10px;
+    font-size: clamp(1.1rem, 5.6vw, 1.35rem);
+    margin-bottom: 6px;
     max-width: none;
   }
 
   .onboarding-copy {
-    font-size: 14px;
-    line-height: 1.5;
+    font-size: 13px;
+    line-height: 1.4;
     max-width: none;
   }
 
   .onboarding-notes {
-    gap: 8px;
-    margin-top: 16px;
+    gap: 6px;
+    margin-top: 10px;
   }
 
   .onboarding-note {
-    font-size: 13px;
-    line-height: 1.45;
+    font-size: 12px;
+    line-height: 1.35;
   }
 
   .onboarding-actions {
-    flex-direction: column;
-    position: sticky;
-    bottom: -18px;
-    margin-top: 20px;
-    padding-top: 14px;
-    padding-bottom: 4px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0), var(--color-surface) 18%);
+    margin-top: 12px;
+    gap: 8px;
+    align-items: stretch;
   }
 
   .onboarding-actions .btn-primary,
   .onboarding-actions .btn-secondary {
-    width: 100%;
+    min-width: 0;
+    flex: 1;
   }
 
   .onboarding-footer {
-    margin-top: 14px;
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) * 0.35);
+    display: none;
   }
 
-  .tour-spotlight {
-    border-width: 2px;
+  .tour-highlight {
+    scroll-margin-top: 196px;
+    scroll-margin-bottom: 80px;
     box-shadow:
-      0 0 0 9999px rgba(32, 26, 43, 0.3),
-      0 0 0 4px rgba(255, 255, 255, 0.1),
-      0 16px 34px rgba(32, 26, 43, 0.24);
+      0 0 0 3px rgba(108, 76, 153, 0.26),
+      0 18px 36px rgba(32, 26, 43, 0.14);
   }
 }
 
