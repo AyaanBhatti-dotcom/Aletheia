@@ -9,6 +9,38 @@ import { averagePainLast30Days } from '../patterns/engine.js'
 import { generateReport } from '../reports/generateReport.js'
 
 const PAIN_COLORS = ['', '#5A8C6B', '#5A8C6B', '#5A8C6B', '#D4943A', '#D4943A', '#D4943A', '#B84040', '#B84040', '#B84040', '#B84040']
+const ENCOURAGEMENT_BY_TIME = {
+  early: [
+    'A gentle start still counts. You are showing up for yourself today.',
+    'One small check-in can make the rest of the day feel more manageable.',
+    'You do not need a perfect morning to make meaningful progress.',
+    'A quiet start is still a strong one. Your consistency matters.',
+  ],
+  morning: [
+    'You are building clarity one entry at a time, and that effort matters.',
+    'Today is a good day to notice what your body is asking for.',
+    'Small moments of care add up. You are doing better than you think.',
+    'The fact that you are checking in is already a meaningful win.',
+  ],
+  afternoon: [
+    'You have made it through a lot already today. Keep being kind to yourself.',
+    'A midday pause can be powerful. Thank you for taking this moment.',
+    'Even brief check-ins help turn patterns into answers over time.',
+    'You are paying attention in a way that future-you will appreciate.',
+  ],
+  evening: [
+    'You made it to the evening. That is worth honoring.',
+    'Closing the day with a quick note is a quiet kind of care.',
+    'However today went, checking in now is still progress.',
+    'You do not need to do everything today. This step is enough.',
+  ],
+  night: [
+    'Rest is productive too. Thank you for taking care of yourself tonight.',
+    'Even a late-night check-in can bring tomorrow a little more clarity.',
+    'You are allowed to end the day gently and still call it progress.',
+    'A few notes now can make the next day feel less heavy.',
+  ],
+}
 
 function getLast90DayRange() {
   const end = new Date()
@@ -57,6 +89,51 @@ function formatDateTime(value) {
     hour: 'numeric',
     minute: '2-digit',
   })
+}
+
+function getDayOfYear(date) {
+  const startOfYear = new Date(date.getFullYear(), 0, 0)
+  const diff = date - startOfYear
+
+  return Math.floor(diff / (24 * 60 * 60 * 1000))
+}
+
+function getTimeBucket(date) {
+  const hour = date.getHours()
+
+  if (hour < 6) {
+    return { key: 'early', label: 'Early hours' }
+  }
+
+  if (hour < 12) {
+    return { key: 'morning', label: 'This morning' }
+  }
+
+  if (hour < 17) {
+    return { key: 'afternoon', label: 'This afternoon' }
+  }
+
+  if (hour < 22) {
+    return { key: 'evening', label: 'This evening' }
+  }
+
+  return { key: 'night', label: 'Tonight' }
+}
+
+function getEncouragement(totalEntriesLogged) {
+  if (totalEntriesLogged === 0) {
+    return null
+  }
+
+  const now = new Date()
+  const { key, label } = getTimeBucket(now)
+  const messages = ENCOURAGEMENT_BY_TIME[key]
+  const messageIndex = (getDayOfYear(now) + totalEntriesLogged) % messages.length
+
+  return {
+    label,
+    message: messages[messageIndex],
+  }
 }
 
 function PainDot({ score }) {
@@ -139,6 +216,7 @@ function DashboardPage() {
     .slice(0, 7)
 
   const avgPain = averagePainLast30Days(symptomEntries)
+  const encouragement = getEncouragement(totalEntriesLogged)
 
   return (
     <div className="landing-shell">
@@ -152,6 +230,13 @@ function DashboardPage() {
           <p className="landing-copy">
             Keep symptoms, cycle changes, and private patterns in one local place designed for calm review, not clutter.
           </p>
+
+          {encouragement && (
+            <div className="landing-encouragement" aria-live="polite">
+              <span className="landing-encouragement__label">{encouragement.label}</span>
+              <p className="landing-encouragement__message">{encouragement.message}</p>
+            </div>
+          )}
 
           <div className="landing-actions">
             <Link to="/log" className="btn-primary landing-actions__primary">
