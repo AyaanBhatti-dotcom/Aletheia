@@ -53,14 +53,14 @@
 
 .tour-spotlight {
   position: fixed;
-  z-index: 46;
+  z-index: 44;
   pointer-events: none;
   border: 2px solid rgba(108, 76, 153, 0.78);
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.08);
   box-shadow:
-    0 0 0 9999px rgba(32, 26, 43, 0.24),
-    0 0 0 6px rgba(255, 255, 255, 0.18),
-    0 22px 54px rgba(32, 26, 43, 0.28);
+    0 0 0 9999px rgba(32, 26, 43, 0.26),
+    0 0 0 6px rgba(255, 255, 255, 0.12),
+    0 22px 54px rgba(32, 26, 43, 0.24);
   transition:
     top 220ms ease,
     left 220ms ease,
@@ -350,7 +350,7 @@
     bottom: max(12px, env(safe-area-inset-bottom, 0px));
     width: auto;
     max-width: none;
-    max-height: min(58dvh, 520px);
+    max-height: min(52dvh, 460px);
     padding: 20px 18px 18px;
     border-radius: 26px;
   }
@@ -410,9 +410,9 @@
   .tour-spotlight {
     border-width: 2px;
     box-shadow:
-      0 0 0 9999px rgba(32, 26, 43, 0.28),
-      0 0 0 4px rgba(255, 255, 255, 0.16),
-      0 16px 34px rgba(32, 26, 43, 0.26);
+      0 0 0 9999px rgba(32, 26, 43, 0.3),
+      0 0 0 4px rgba(255, 255, 255, 0.1),
+      0 16px 34px rgba(32, 26, 43, 0.24);
   }
 }
 
