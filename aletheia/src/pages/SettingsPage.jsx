@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { clearAllData, getCycleEntries, getSymptomEntries, importAllData } from '../db/db.js'
 import { generateKey } from '../crypto/crypto.js'
+import { useTour } from '../context/TourContext.jsx'
 
 const SESSION_KEY_STORAGE = 'aletheia-derived-key'
 const ONBOARDING_STORAGE_KEY = 'aletheia-onboarding-complete'
@@ -34,6 +35,7 @@ function SettingsSection({ title, description, children }) {
 }
 
 function SettingsPage() {
+  const { activeTourTarget, isTourOpen } = useTour()
   const [passphrase, setPassphrase] = useState('')
   const [isEncryptionActive, setIsEncryptionActive] = useState(
     Boolean(sessionStorage.getItem(SESSION_KEY_STORAGE)),
@@ -154,8 +156,13 @@ function SettingsPage() {
       <SettingsSection
         title="Session encryption"
         description="Protect your data with a passphrase for this browser session."
+        
       >
-        <form onSubmit={handleActivateEncryption} style={{ display: 'grid', gap: '12px' }}>
+        <form
+          onSubmit={handleActivateEncryption}
+          style={{ display: 'grid', gap: '12px' }}
+          className={isTourOpen && activeTourTarget === 'settings-encryption' ? 'tour-highlight' : ''}
+        >
           <div>
             <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.06em' }} htmlFor="passphrase">
               Passphrase

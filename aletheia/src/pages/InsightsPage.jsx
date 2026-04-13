@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import EmptyState from '../components/EmptyState.jsx'
 import LoadingSpinner from '../components/LoadingSpinner.jsx'
 import { useDemo } from '../context/DemoContext.jsx'
+import { useTour } from '../context/TourContext.jsx'
 import { getCycleEntries, getSymptomEntries } from '../db/db.js'
 import { cycleEntries as demoCycleEntries, symptomEntries as demoSymptomEntries } from '../demo/demoData.js'
 import {
@@ -47,6 +48,7 @@ function PhaseValue({ value }) {
 
 function InsightsPage() {
   const { isDemoMode } = useDemo()
+  const { activeTourTarget, isTourOpen } = useTour()
   const [symptomEntries, setSymptomEntries] = useState([])
   const [cycleEntries, setCycleEntries] = useState([])
   const [loadedSource, setLoadedSource] = useState('')
@@ -113,7 +115,10 @@ function InsightsPage() {
       </div>
 
       {/* Average pain — featured */}
-      <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+      <div
+        className={`card${isTourOpen && activeTourTarget === 'insights-summary' ? ' tour-highlight' : ''}`}
+        style={{ display: 'flex', alignItems: 'center', gap: '20px' }}
+      >
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--color-text-muted)', marginBottom: '6px' }}>
             30-day avg pain

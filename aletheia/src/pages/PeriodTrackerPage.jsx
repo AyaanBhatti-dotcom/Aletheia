@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import EmptyState from '../components/EmptyState.jsx'
 import LoadingSpinner from '../components/LoadingSpinner.jsx'
 import { useDemo } from '../context/DemoContext.jsx'
+import { useTour } from '../context/TourContext.jsx'
 import { getCycleEntries, saveCycleEntry } from '../db/db.js'
 import { cycleEntries as demoCycleEntries } from '../demo/demoData.js'
 
@@ -209,6 +210,7 @@ function ScaleField({ id, label, value, onChange }) {
 
 function PeriodTrackerPage() {
   const { isDemoMode } = useDemo()
+  const { activeTourTarget, isTourOpen } = useTour()
   const [formState, setFormState] = useState(() => getDefaultFormState(formatTodayForDateInput()))
   const [cycleEntries, setCycleEntries] = useState([])
   const [loadedSource, setLoadedSource] = useState('')
@@ -309,7 +311,9 @@ function PeriodTrackerPage() {
           </div>
         )}
 
-        <section className="tracker-calendar-shell">
+        <section
+          className={`tracker-calendar-shell${isTourOpen && activeTourTarget === 'cycle-calendar' ? ' tour-highlight' : ''}`}
+        >
           <div className="tracker-calendar-topline">
             <div>
               <p className="privacy-badge">Cycle calendar</p>

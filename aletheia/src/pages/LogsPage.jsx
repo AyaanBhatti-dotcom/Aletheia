@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import LoadingSpinner from '../components/LoadingSpinner.jsx'
 import { useDemo } from '../context/DemoContext.jsx'
+import { useTour } from '../context/TourContext.jsx'
 import { getCycleEntries, getSymptomEntries } from '../db/db.js'
 import { cycleEntries as demoCycleEntries, symptomEntries as demoSymptomEntries } from '../demo/demoData.js'
 
@@ -21,6 +22,7 @@ function formatDate(value, includeTime = false) {
 
 function LogsPage() {
   const { isDemoMode } = useDemo()
+  const { activeTourTarget, isTourOpen } = useTour()
   const [entries, setEntries] = useState([])
   const [loadedSource, setLoadedSource] = useState('')
   const sourceKey = isDemoMode ? 'demo' : 'db'
@@ -75,7 +77,10 @@ function LogsPage() {
       </div>
 
       {entries.length > 0 ? (
-        <div style={{ display: 'grid', gap: '12px' }}>
+        <div
+          style={{ display: 'grid', gap: '12px' }}
+          className={isTourOpen && activeTourTarget === 'logs-list' ? 'tour-highlight' : ''}
+        >
           {entries.map((entry) => (
             <Link
               key={`${entry.type}-${entry.id}`}

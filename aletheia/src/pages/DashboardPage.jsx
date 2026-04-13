@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import LoadingSpinner from '../components/LoadingSpinner.jsx'
 import { useDemo } from '../context/DemoContext.jsx'
+import { useTour } from '../context/TourContext.jsx'
 import { getCycleEntries, getSymptomEntries } from '../db/db.js'
 import { cycleEntries as demoCycleEntries, symptomEntries as demoSymptomEntries } from '../demo/demoData.js'
 import { averagePainLast30Days } from '../patterns/engine.js'
@@ -66,6 +67,7 @@ function PainDot({ score }) {
 
 function DashboardPage() {
   const { isDemoMode, toggleDemo } = useDemo()
+  const { activeTourTarget, isTourOpen } = useTour()
   const [symptomEntries, setSymptomEntries] = useState([])
   const [cycleEntries, setCycleEntries] = useState([])
   const [loadedSource, setLoadedSource] = useState('')
@@ -141,7 +143,9 @@ function DashboardPage() {
   return (
     <div className="landing-shell">
       <section className="landing-hero">
-        <div className="landing-hero__copy">
+        <div
+          className={`landing-hero__copy${isTourOpen && activeTourTarget === 'dashboard-hero' ? ' tour-highlight' : ''}`}
+        >
           <span className="landing-kicker">Aletheia</span>
           <h1 className="landing-title">A quieter way to track what your body has been trying to tell you.</h1>
           <p className="landing-copy">
@@ -159,7 +163,7 @@ function DashboardPage() {
             )}
             <button
               type="button"
-              className="btn-secondary"
+              className={`btn-secondary${isTourOpen && activeTourTarget === 'dashboard-export' ? ' tour-highlight' : ''}`}
               onClick={() => generateReport(symptomEntries, cycleEntries, getLast90DayRange())}
             >
               Export report

@@ -4,6 +4,7 @@ import LoadingSpinner from '../components/LoadingSpinner.jsx'
 import DOMPurify from 'dompurify'
 import { getSymptomEntries, saveSymptomEntry } from '../db/db.js'
 import { useDemo } from '../context/DemoContext.jsx'
+import { useTour } from '../context/TourContext.jsx'
 import { symptomEntries as demoSymptomEntries } from '../demo/demoData.js'
 
 const USER_SYMPTOMS_STORAGE_KEY = 'userSymptoms'
@@ -81,6 +82,7 @@ function SectionDivider({ title }) {
 
 function SymptomLogPage() {
   const { isDemoMode } = useDemo()
+  const { activeTourTarget, isTourOpen } = useTour()
   const [dateTime, setDateTime] = useState(formatNowForDateTimeInput)
   const [painScale, setPainScale] = useState(1)
   const [painTypes, setPainTypes] = useState([])
@@ -158,7 +160,11 @@ function SymptomLogPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '14px' }}>
+      <form
+        onSubmit={handleSubmit}
+        style={{ display: 'grid', gap: '14px' }}
+        className={isTourOpen && activeTourTarget === 'symptom-form' ? 'tour-highlight' : ''}
+      >
 
         {/* Header */}
         <div style={{ paddingBottom: '4px' }}>

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { NavLink, Route, Routes, useLocation } from 'react-router-dom'
+import { NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import './App.css'
 import { useDemo } from './context/DemoContext.jsx'
+import { TourProvider } from './context/TourContext.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
 import FaqPage from './pages/FaqPage.jsx'
 import InsightsPage from './pages/InsightsPage.jsx'
@@ -69,6 +70,8 @@ const tourSteps = [
     title: 'Welcome to Aletheia.',
     body:
       'This is your private place to track symptoms, follow your cycle, and turn scattered notes into something you can actually use.',
+    route: '/',
+    target: 'dashboard-hero',
     highlights: [
       'Everything stays in this browser unless you choose to export it.',
       'You can move at your own pace and start with as little information as you want.',
@@ -78,20 +81,48 @@ const tourSteps = [
     eyebrow: 'Track',
     title: 'Log symptoms and cycle changes day by day.',
     body:
-      'Use Symptom log for pain, body areas, notes, and photos. Use Cycle to record flow, discharge, pain scales, and the calendar view.',
+      'Use Symptom log for pain, body areas, notes, and photos. This is the quickest place to capture what you are feeling in the moment.',
+    route: '/log',
+    target: 'symptom-form',
     highlights: [
-      'Tap dates in the cycle calendar to jump into a specific day.',
-      'Your entries build a timeline you can browse later in All logs.',
+      'The form is built for fast entry when symptoms hit.',
+      'Notes and photos are saved with the rest of the log.',
+    ],
+  },
+  {
+    eyebrow: 'Cycle',
+    title: 'Use the cycle calendar to see patterns over the month.',
+    body:
+      'The cycle page gives you a visual month view of entries so you can tap into a date and update the exact day you want.',
+    route: '/tracker',
+    target: 'cycle-calendar',
+    highlights: [
+      'Logged flow appears directly inside the calendar.',
+      'Tap any day to preload that date into the tracker form.',
     ],
   },
   {
     eyebrow: 'Review',
-    title: 'Open past logs and look for patterns.',
+    title: 'Open past logs and review details entry by entry.',
     body:
-      'The dashboard gives you a quick summary, while Insights turns your entries into flare history, top symptoms, phase pain, and 30-day averages.',
+      'Your history is fully browsable, so you can move through old symptom and cycle logs and open each one to see the full details.',
+    route: '/logs',
+    target: 'logs-list',
     highlights: [
-      'Recent activity on the home screen opens into full entry details.',
-      'Insights becomes more useful as you log more days.',
+      'This makes it easier to prepare for appointments or compare changes over time.',
+      'Recent activity on the home screen links into these same details.',
+    ],
+  },
+  {
+    eyebrow: 'Insights',
+    title: 'See patterns instead of isolated entries.',
+    body:
+      'Insights turns your logs into flare history, top symptoms, cycle-phase pain, and 30-day averages once you have enough data.',
+    route: '/insights',
+    target: 'insights-summary',
+    highlights: [
+      'Patterns become easier to spot when the app summarizes them visually.',
+      'The more consistently you log, the more useful this page becomes.',
     ],
   },
   {
@@ -99,6 +130,8 @@ const tourSteps = [
     title: 'Create a PDF report when you need to share context.',
     body:
       'From the dashboard, use Export report to generate a local PDF with your symptom timeline, cycle summary, and pattern overview.',
+    route: '/',
+    target: 'dashboard-export',
     highlights: [
       'Reports are generated on your device.',
       'You can also export raw data from Settings as JSON.',
@@ -109,6 +142,8 @@ const tourSteps = [
     title: 'Privacy and encryption are built into the app.',
     body:
       'Settings lets you activate encryption with a passphrase, export or clear data, and review the privacy notice for how everything is stored.',
+    route: '/settings',
+    target: 'settings-encryption',
     highlights: [
       'Data is stored locally in this browser.',
       'No entries are transmitted to a server by default.',
@@ -119,10 +154,23 @@ const tourSteps = [
 function App() {
   const { isDemoMode, toggleDemo } = useDemo()
   const location = useLocation()
+  const navigate = useNavigate()
   const [showOnboarding, setShowOnboarding] = useState(
     () => !localStorage.getItem(ONBOARDING_STORAGE_KEY),
   )
   const [tourStep, setTourStep] = useState(0)
+
+  useEffect(() => {
+    if (!showOnboarding) {
+      return
+    }
+
+    const step = tourSteps[tourStep]
+
+    if (step?.route && location.pathname !== step.route) {
+      navigate(step.route)
+    }
+  }, [location.pathname, navigate, showOnboarding, tourStep])
 
   useEffect(() => {
     function handleReplayTour() {
@@ -145,12 +193,20 @@ function App() {
     localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true')
     setTourStep(0)
     setShowOnboarding(false)
+    navigate('/')
   }
 
   return (
-    <div className="app-shell">
+    <TourProvider
+      value={{
+        activeTourTarget: showOnboarding ? tourSteps[tourStep]?.target || null : null,
+        isTourOpen: showOnboarding,
+      }}
+    >
+      <div className="app-shell">
       {showOnboarding && (
         <div className="onboarding-screen">
+          <div className="onboarding-scrim" />
           <div className="onboarding-panel">
             <div className="onboarding-orb" aria-hidden="true" />
             <div className="onboarding-progress">
@@ -255,7 +311,8 @@ function App() {
           </NavLink>
         ))}
       </nav>
-    </div>
+      </div>
+    </TourProvider>
   )
 }
 

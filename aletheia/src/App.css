@@ -22,6 +22,13 @@
   animation: fade-up 280ms ease both;
 }
 
+.onboarding-scrim {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.06), rgba(32, 26, 43, 0.14) 34%, rgba(32, 26, 43, 0.34) 68%);
+  pointer-events: none;
+}
+
 .onboarding-panel {
   width: min(100%, 540px);
   padding: 36px 28px;
@@ -30,6 +37,8 @@
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow-lg);
   animation: scale-in 340ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  position: relative;
+  z-index: 50;
 }
 
 .onboarding-orb {
@@ -133,6 +142,16 @@
 .onboarding-footer {
   margin-top: 20px;
   display: flex;
+}
+
+.tour-highlight {
+  position: relative;
+  z-index: 45;
+  border-radius: inherit;
+  box-shadow:
+    0 0 0 3px rgba(108, 76, 153, 0.22),
+    0 24px 56px rgba(32, 26, 43, 0.18);
+  animation: tour-pulse 1.9s ease-in-out infinite;
 }
 
 /* ── Demo Banner ────────────────────────────────── */
@@ -245,6 +264,20 @@
   height: 4px;
   border-radius: 50%;
   background: var(--color-primary);
+}
+
+@keyframes tour-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 3px rgba(108, 76, 153, 0.22),
+      0 24px 56px rgba(32, 26, 43, 0.18);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 7px rgba(108, 76, 153, 0.12),
+      0 28px 64px rgba(32, 26, 43, 0.22);
+  }
 }
 
 /* ── Responsive ─────────────────────────────────── */
