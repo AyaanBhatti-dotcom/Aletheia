@@ -544,6 +544,182 @@ input[type="range"]::-moz-range-thumb {
   font-weight: 500;
 }
 
+/* ── Cycle Calendar ─────────────────────────────── */
+
+.tracker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  padding-bottom: 4px;
+}
+
+.tracker-calendar-shell {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border-radius: var(--radius-xl);
+  background:
+    radial-gradient(circle at top right, rgba(217, 149, 124, 0.18), transparent 36%),
+    linear-gradient(180deg, var(--color-surface) 0%, var(--color-surface-raised) 100%);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow);
+}
+
+.tracker-calendar-topline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.tracker-calendar-nav {
+  display: flex;
+  gap: 8px;
+}
+
+.tracker-calendar-nav__button {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-primary);
+  font-size: 24px;
+  line-height: 1;
+  padding: 0;
+}
+
+.tracker-calendar-nav__button:hover {
+  background: var(--color-accent);
+}
+
+.tracker-calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+}
+
+.tracker-calendar-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: capitalize;
+}
+
+.tracker-calendar-legend__swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-border);
+}
+
+.cycle-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.cycle-calendar__weekday {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  text-align: center;
+  padding-bottom: 4px;
+}
+
+.cycle-calendar__day {
+  min-height: 92px;
+  padding: 12px 10px;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  transition: transform var(--ease), border-color var(--ease), box-shadow var(--ease), background var(--ease);
+}
+
+.cycle-calendar__day:hover {
+  transform: translateY(-1px);
+  border-color: var(--color-primary-light);
+  box-shadow: var(--shadow-xs);
+}
+
+.cycle-calendar__day--outside {
+  opacity: 0.4;
+}
+
+.cycle-calendar__day--selected {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(185, 107, 82, 0.16);
+}
+
+.cycle-calendar__day--today .cycle-calendar__day-number {
+  color: var(--color-primary);
+}
+
+.cycle-calendar__day-number {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.cycle-calendar__day-meta {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.cycle-calendar__day-cycle {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.cycle-calendar__day--none,
+.tracker-calendar-legend__swatch.cycle-calendar__day--none {
+  background: linear-gradient(180deg, var(--color-surface) 0%, var(--color-surface-raised) 100%);
+}
+
+.cycle-calendar__day--spotting,
+.tracker-calendar-legend__swatch.cycle-calendar__day--spotting {
+  background: #f9ebe5;
+}
+
+.cycle-calendar__day--light,
+.tracker-calendar-legend__swatch.cycle-calendar__day--light {
+  background: #f4ddd2;
+}
+
+.cycle-calendar__day--moderate,
+.tracker-calendar-legend__swatch.cycle-calendar__day--moderate {
+  background: #edc0ac;
+}
+
+.cycle-calendar__day--heavy,
+.tracker-calendar-legend__swatch.cycle-calendar__day--heavy {
+  background: #dea087;
+}
+
+.cycle-calendar__day--very-heavy,
+.tracker-calendar-legend__swatch.cycle-calendar__day--very-heavy {
+  background: #c97e63;
+  color: #fff;
+}
+
+.cycle-calendar__day--very-heavy .cycle-calendar__day-cycle {
+  color: rgba(255, 255, 255, 0.82);
+}
+
 /* ── Keyframes ──────────────────────────────────── */
 
 @keyframes spin     { to { transform: rotate(360deg); } }
@@ -554,4 +730,25 @@ input[type="range"]::-moz-range-thumb {
 @keyframes scale-in {
   from { opacity: 0; transform: scale(0.94); }
   to   { opacity: 1; transform: scale(1); }
+}
+
+@media (max-width: 780px) {
+  .tracker-calendar-topline {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .cycle-calendar {
+    gap: 6px;
+  }
+
+  .cycle-calendar__day {
+    min-height: 82px;
+    padding: 10px 8px;
+  }
+
+  .cycle-calendar__day-meta,
+  .cycle-calendar__day-cycle {
+    font-size: 10px;
+  }
 }

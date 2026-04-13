@@ -8,20 +8,102 @@ import { cycleEntries as demoCycleEntries } from '../demo/demoData.js'
 const flowLevels = ['none', 'spotting', 'light', 'moderate', 'heavy', 'very heavy']
 const bloodColors = ['bright red', 'dark red', 'brown', 'pink', 'orange']
 const clotOptions = ['none', 'small clots', 'large clots']
-const dischargeOptions = ['none', 'clear', 'white/creamy', 'yellow', 'brown/old blood', 'unusual']
+const dischargeOptions = [
+  'none',
+  'clear',
+  'white/creamy',
+  'yellow',
+  'brown/old blood',
+  'unusual texture',
+]
 const severityLabels = ['None', 'Mild', 'Moderate', 'Severe', 'Very severe']
+const weekdayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 function formatTodayForDateInput() {
   const now = new Date()
   const offset = now.getTimezoneOffset()
   const localDate = new Date(now.getTime() - offset * 60000)
+
   return localDate.toISOString().slice(0, 10)
 }
 
 function sliderBackground(value, min, max) {
   const pct = ((value - min) / (max - min)) * 100
+
   return {
     background: `linear-gradient(to right, var(--color-primary) ${pct}%, var(--color-border) ${pct}%)`,
+  }
+}
+
+function createMonthDate(value) {
+  const date = new Date(`${value}T12:00:00`)
+  return new Date(date.getFullYear(), date.getMonth(), 1)
+}
+
+function formatMonthLabel(date) {
+  return date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+}
+
+function formatDateKey(date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+
+  return `${year}-${month}-${day}`
+}
+
+function getCalendarDays(monthDate) {
+  const year = monthDate.getFullYear()
+  const month = monthDate.getMonth()
+  const firstDay = new Date(year, month, 1)
+  const startDay = firstDay.getDay()
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const totalCells = Math.ceil((startDay + daysInMonth) / 7) * 7
+
+  return Array.from({ length: totalCells }, (_, index) => {
+    const dayNumber = index - startDay + 1
+    const date = new Date(year, month, dayNumber)
+    return {
+      date,
+      key: formatDateKey(date),
+      inMonth: dayNumber >= 1 && dayNumber <= daysInMonth,
+    }
+  })
+}
+
+function getFlowClass(flowLevel) {
+  return flowLevel ? `cycle-calendar__day--${flowLevel.replace(/\s+/g, '-')}` : ''
+}
+
+function getDefaultFormState(dateValue) {
+  return {
+    date: dateValue,
+    flowLevel: 'none',
+    bloodColor: 'bright red',
+    clots: 'none',
+    discharge: 'none',
+    breastTenderness: 0,
+    bloating: 0,
+    cervicalPain: 0,
+    cycleDay: '',
+  }
+}
+
+function getFormStateFromEntry(entry, dateValue) {
+  if (!entry) {
+    return getDefaultFormState(dateValue)
+  }
+
+  return {
+    date: dateValue,
+    flowLevel: entry.flowLevel || 'none',
+    bloodColor: entry.bloodColor || 'bright red',
+    clots: entry.clots || 'none',
+    discharge: entry.discharge || 'none',
+    breastTenderness: entry.breastTenderness ?? 0,
+    bloating: entry.bloating ?? 0,
+    cervicalPain: entry.cervicalPain ?? 0,
+    cycleDay: entry.cycleDay === '' || entry.cycleDay === undefined ? '' : String(entry.cycleDay),
   }
 }
 
@@ -61,15 +143,24 @@ function ScaleField({ id, label, value, onChange }) {
     <div className="card" style={{ display: 'grid', gap: '14px' }}>
       <div className="field-label">{label}</div>
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px', marginBottom: '2px' }}>
-        <span style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: '2.8rem',
-          lineHeight: 1,
-          color: 'var(--color-primary)',
-        }}>
+        <span
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: '2.8rem',
+            lineHeight: 1,
+            color: 'var(--color-primary)',
+          }}
+        >
           {value}
         </span>
-        <span style={{ fontSize: '15px', color: 'var(--color-text-muted)', fontWeight: 500, paddingBottom: '5px' }}>
+        <span
+          style={{
+            fontSize: '15px',
+            color: 'var(--color-text-muted)',
+            fontWeight: 500,
+            paddingBottom: '5px',
+          }}
+        >
           {severityLabels[value]}
         </span>
       </div>
@@ -79,11 +170,19 @@ function ScaleField({ id, label, value, onChange }) {
         min="0"
         max="4"
         value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
+        onChange={(event) => onChange(Number(event.target.value))}
         style={sliderBackground(value, 0, 4)}
         aria-label={`${label}: ${value}, ${severityLabels[value]}`}
       />
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--color-text-muted)', fontWeight: 600 }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          fontSize: '12px',
+          color: 'var(--color-text-muted)',
+          fontWeight: 600,
+        }}
+      >
         <span>None</span>
         <span>Very severe</span>
       </div>
@@ -93,45 +192,65 @@ function ScaleField({ id, label, value, onChange }) {
 
 function PeriodTrackerPage() {
   const { isDemoMode } = useDemo()
-  const [date, setDate] = useState(formatTodayForDateInput)
-  const [flowLevel, setFlowLevel] = useState('none')
-  const [bloodColor, setBloodColor] = useState('bright red')
-  const [clots, setClots] = useState('none')
-  const [discharge, setDischarge] = useState('none')
-  const [breastTenderness, setBreastTenderness] = useState(0)
-  const [bloating, setBloating] = useState(0)
-  const [cervicalPain, setCervicalPain] = useState(0)
-  const [cycleDay, setCycleDay] = useState('')
-  const [hasEntries, setHasEntries] = useState(false)
+  const [formState, setFormState] = useState(() => getDefaultFormState(formatTodayForDateInput()))
+  const [cycleEntries, setCycleEntries] = useState([])
   const [loadedSource, setLoadedSource] = useState('')
   const [savedKey, setSavedKey] = useState(null)
+  const [visibleMonth, setVisibleMonth] = useState(() => createMonthDate(formatTodayForDateInput()))
   const sourceKey = isDemoMode ? 'demo' : 'db'
+  const hasEntries = cycleEntries.length > 0
 
   useEffect(() => {
     let isMounted = true
     const entriesPromise = isDemoMode ? Promise.resolve(demoCycleEntries) : getCycleEntries()
+
     entriesPromise.then((entries) => {
-      if (!isMounted) return
-      setHasEntries(entries.length > 0)
+      if (!isMounted) {
+        return
+      }
+
+      setCycleEntries(entries)
       setLoadedSource(sourceKey)
     })
-    return () => { isMounted = false }
+
+    return () => {
+      isMounted = false
+    }
   }, [isDemoMode, sourceKey])
+
+  const entryByDate = new Map()
+  cycleEntries.forEach((entry) => {
+    entryByDate.set(entry.date, entry)
+  })
+
+  function updateForm(nextPartialState) {
+    setFormState((currentState) => ({ ...currentState, ...nextPartialState }))
+  }
+
+  function selectDate(dateValue) {
+    setFormState(getFormStateFromEntry(entryByDate.get(dateValue), dateValue))
+    setVisibleMonth(createMonthDate(dateValue))
+  }
 
   async function handleSubmit(event) {
     event.preventDefault()
-    await saveCycleEntry({
-      date,
-      flowLevel,
-      bloodColor,
-      clots,
-      discharge,
-      breastTenderness,
-      bloating,
-      cervicalPain,
-      cycleDay: cycleDay === '' ? '' : Number(cycleDay),
+
+    const savedEntry = await saveCycleEntry({
+      date: formState.date,
+      flowLevel: formState.flowLevel,
+      bloodColor: formState.bloodColor,
+      clots: formState.clots,
+      discharge: formState.discharge,
+      breastTenderness: formState.breastTenderness,
+      bloating: formState.bloating,
+      cervicalPain: formState.cervicalPain,
+      cycleDay: formState.cycleDay === '' ? '' : Number(formState.cycleDay),
     })
-    setHasEntries(true)
+
+    if (!isDemoMode) {
+      setCycleEntries((currentEntries) => [...currentEntries, savedEntry])
+    }
+
     setSavedKey(Date.now())
     setTimeout(() => setSavedKey(null), 2800)
   }
@@ -140,23 +259,28 @@ function PeriodTrackerPage() {
     return <LoadingSpinner />
   }
 
+  const calendarDays = getCalendarDays(visibleMonth)
+  const todayKey = formatTodayForDateInput()
+
   return (
-    <div style={{ width: '100%', maxWidth: '600px' }}>
+    <div style={{ width: '100%', maxWidth: '860px' }}>
       {savedKey !== null && (
         <div className="toast" key={savedKey} role="status" aria-live="polite">
-          <span className="toast__dot" aria-hidden="true">✓</span>
+          <span className="toast__dot" aria-hidden="true">
+            ✓
+          </span>
           Cycle entry saved
         </div>
       )}
 
-      <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '14px' }}>
-
-        {/* Header */}
-        <div style={{ paddingBottom: '4px' }}>
-          <h1 style={{ marginBottom: '6px' }}>Period tracker</h1>
-          <p style={{ fontSize: '14px', color: 'var(--color-text-muted)', fontWeight: 500 }}>
-            Log your cycle day by day.
-          </p>
+      <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '18px' }}>
+        <div className="tracker-header">
+          <div>
+            <h1 style={{ marginBottom: '6px' }}>Period tracker</h1>
+            <p style={{ fontSize: '14px', color: 'var(--color-text-muted)', fontWeight: 500 }}>
+              View your month at a glance and log the day you want to update.
+            </p>
+          </div>
         </div>
 
         {!hasEntries && (
@@ -168,90 +292,182 @@ function PeriodTrackerPage() {
           </div>
         )}
 
-        {/* Date */}
+        <section className="tracker-calendar-shell">
+          <div className="tracker-calendar-topline">
+            <div>
+              <p className="privacy-badge">Cycle calendar</p>
+              <h2 style={{ marginTop: '10px' }}>{formatMonthLabel(visibleMonth)}</h2>
+            </div>
+            <div className="tracker-calendar-nav">
+              <button
+                type="button"
+                className="tracker-calendar-nav__button"
+                onClick={() =>
+                  setVisibleMonth(
+                    (currentMonth) =>
+                      new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1),
+                  )
+                }
+                aria-label="Previous month"
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                className="tracker-calendar-nav__button"
+                onClick={() =>
+                  setVisibleMonth(
+                    (currentMonth) =>
+                      new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1),
+                  )
+                }
+                aria-label="Next month"
+              >
+                ›
+              </button>
+            </div>
+          </div>
+
+          <div className="tracker-calendar-legend">
+            {flowLevels.map((flowLevel) => (
+              <div key={flowLevel} className="tracker-calendar-legend__item">
+                <span className={`tracker-calendar-legend__swatch ${getFlowClass(flowLevel)}`} />
+                <span>{flowLevel}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="cycle-calendar">
+            {weekdayLabels.map((label) => (
+              <div key={label} className="cycle-calendar__weekday">
+                {label}
+              </div>
+            ))}
+
+            {calendarDays.map((day) => {
+              const entry = entryByDate.get(day.key)
+              const isSelected = formState.date === day.key
+              const isToday = day.key === todayKey
+
+              return (
+                <button
+                  key={day.key}
+                  type="button"
+                  className={`cycle-calendar__day${day.inMonth ? '' : ' cycle-calendar__day--outside'}${isSelected ? ' cycle-calendar__day--selected' : ''}${isToday ? ' cycle-calendar__day--today' : ''}${entry ? ` ${getFlowClass(entry.flowLevel)}` : ''}`}
+                  onClick={() => selectDate(day.key)}
+                >
+                  <span className="cycle-calendar__day-number">{day.date.getDate()}</span>
+                  {entry && (
+                    <>
+                      <span className="cycle-calendar__day-meta">{entry.flowLevel}</span>
+                      {entry.cycleDay && (
+                        <span className="cycle-calendar__day-cycle">Day {entry.cycleDay}</span>
+                      )}
+                    </>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        </section>
+
         <div className="card" style={{ display: 'grid', gap: '10px' }}>
-          <label className="field-label" htmlFor="cycle-date">Date</label>
+          <label className="field-label" htmlFor="cycle-date">
+            Date
+          </label>
           <input
             id="cycle-date"
             type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
+            value={formState.date}
+            onChange={(event) => selectDate(event.target.value)}
           />
         </div>
 
-        {/* Cycle day */}
         <div className="card" style={{ display: 'grid', gap: '10px' }}>
           <label className="field-label" htmlFor="cycle-day">
             Cycle day
-            <span style={{ fontSize: '13px', color: 'var(--color-text-muted)', fontWeight: 400, marginLeft: '8px' }}>Optional</span>
+            <span
+              style={{
+                fontSize: '13px',
+                color: 'var(--color-text-muted)',
+                fontWeight: 400,
+                marginLeft: '8px',
+              }}
+            >
+              Optional
+            </span>
           </label>
           <input
             id="cycle-day"
             type="number"
             min="1"
             placeholder="e.g. 14"
-            value={cycleDay}
-            onChange={(e) => setCycleDay(e.target.value)}
+            value={formState.cycleDay}
+            onChange={(event) => updateForm({ cycleDay: event.target.value })}
           />
         </div>
 
-        {/* Flow level */}
         <SingleSelect
           label="Flow level"
           options={flowLevels}
-          value={flowLevel}
-          onChange={setFlowLevel}
+          value={formState.flowLevel}
+          onChange={(value) => updateForm({ flowLevel: value })}
         />
 
-        {/* Blood color */}
         <SingleSelect
           label="Blood color"
           options={bloodColors}
-          value={bloodColor}
-          onChange={setBloodColor}
+          value={formState.bloodColor}
+          onChange={(value) => updateForm({ bloodColor: value })}
         />
 
-        {/* Clots */}
         <SingleSelect
           label="Clots"
           options={clotOptions}
-          value={clots}
-          onChange={setClots}
+          value={formState.clots}
+          onChange={(value) => updateForm({ clots: value })}
         />
 
-        {/* Discharge */}
         <SingleSelect
           label="Discharge"
           options={dischargeOptions}
-          value={discharge}
-          onChange={setDischarge}
+          value={formState.discharge}
+          onChange={(value) => updateForm({ discharge: value })}
         />
 
-        {/* Severity scales */}
         <ScaleField
           id="breast-tenderness"
           label="Breast tenderness"
-          value={breastTenderness}
-          onChange={setBreastTenderness}
+          value={formState.breastTenderness}
+          onChange={(value) => updateForm({ breastTenderness: value })}
         />
 
         <ScaleField
           id="bloating"
           label="Bloating"
-          value={bloating}
-          onChange={setBloating}
+          value={formState.bloating}
+          onChange={(value) => updateForm({ bloating: value })}
         />
 
         <ScaleField
           id="cervical-pain"
           label="Cervical pain"
-          value={cervicalPain}
-          onChange={setCervicalPain}
+          value={formState.cervicalPain}
+          onChange={(value) => updateForm({ cervicalPain: value })}
         />
 
-        {/* Save */}
         <button type="submit" className="btn-primary" style={{ marginTop: '4px' }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
             <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
             <polyline points="17 21 17 13 7 13 7 21" />
             <polyline points="7 3 7 8 15 8" />
@@ -259,7 +475,14 @@ function PeriodTrackerPage() {
           Save cycle entry
         </button>
 
-        <p style={{ textAlign: 'center', fontSize: '12px', color: 'var(--color-text-muted)', fontWeight: 500 }}>
+        <p
+          style={{
+            textAlign: 'center',
+            fontSize: '12px',
+            color: 'var(--color-text-muted)',
+            fontWeight: 500,
+          }}
+        >
           🔒 Saved locally on your device
         </p>
       </form>
