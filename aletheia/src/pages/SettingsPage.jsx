@@ -4,6 +4,7 @@ import { clearAllData, getCycleEntries, getSymptomEntries, importAllData } from 
 import { generateKey } from '../crypto/crypto.js'
 
 const SESSION_KEY_STORAGE = 'aletheia-derived-key'
+const ONBOARDING_STORAGE_KEY = 'aletheia-onboarding-complete'
 
 function downloadJsonFile(data, filename) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
@@ -37,6 +38,11 @@ function SettingsPage() {
     Boolean(sessionStorage.getItem(SESSION_KEY_STORAGE)),
   )
   const [statusMessage, setStatusMessage] = useState('')
+
+  function handleReplayWelcomeTour() {
+    localStorage.removeItem(ONBOARDING_STORAGE_KEY)
+    window.location.assign('/')
+  }
 
   async function handleActivateEncryption(event) {
     event.preventDefault()
@@ -255,6 +261,16 @@ function SettingsPage() {
           </svg>
           View doctor guide
         </Link>
+      </SettingsSection>
+
+      {/* Welcome tour */}
+      <SettingsSection
+        title="Welcome tour"
+        description="Replay the onboarding walkthrough."
+      >
+        <button type="button" className="btn-secondary" onClick={handleReplayWelcomeTour}>
+          Replay welcome tour
+        </button>
       </SettingsSection>
 
       {/* Danger zone */}
