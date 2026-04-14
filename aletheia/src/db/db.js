@@ -19,6 +19,7 @@ const PROTECTION_META_KEY = 'journal-protection'
 const DATE_TIME_INDEX = 'dateTime'
 const PROTECTION_CHECK_TEXT = 'aletheia-journal-check'
 const SAFE_IMAGE_DATA_URL_PATTERN = /^data:image\/[a-z0-9.+-]+;base64,[a-z0-9+/=\s]+$/i
+const journalWarnings = []
 
 function openDatabase() {
   return new Promise((resolve, reject) => {
@@ -119,8 +120,38 @@ function ensureProtectionConfig(record) {
   }
 }
 
+function addJournalWarning(message) {
+  journalWarnings.push(message)
+}
+
+export function consumeJournalWarnings() {
+  if (journalWarnings.length === 0) {
+    return []
+  }
+
+  const warnings = [...journalWarnings]
+  journalWarnings.length = 0
+  return warnings
+}
+
 function isProtectedRecord(entry) {
   return Boolean(entry?.protectedPayload)
+}
+
+function hasValidProtectedPayload(entry) {
+  if (!entry || typeof entry !== 'object') {
+    return false
+  }
+
+  if (typeof entry.id !== 'string' || entry.id.length === 0) {
+    return false
+  }
+
+  if (typeof entry.protectedPayload !== 'string' || entry.protectedPayload.trim().length === 0) {
+    return false
+  }
+
+  return true
 }
 
 function sanitizePhotoValue(photo) {
@@ -175,6 +206,15 @@ async function unprotectEntry(entry, key) {
 
   const plaintext = await decryptData(key, entry.protectedPayload)
   return sanitizeEntryBeforeSave(JSON.parse(plaintext))
+}
+
+async function safelyUnprotectEntry(entry, key, warningMessage) {
+  try {
+    return await unprotectEntry(entry, key)
+  } catch {
+    addJournalWarning(warningMessage)
+    return null
+  }
 }
 
 async function getProtectionConfig() {
@@ -280,7 +320,13 @@ async function getEntries(storeName) {
   }
 
   const key = requireSessionKey()
-  return Promise.all(items.map((entry) => unprotectEntry(entry, key)))
+  const nextItems = await Promise.all(
+    items.map((entry) =>
+      safelyUnprotectEntry(entry, key, 'One saved record could not be opened and was skipped.'),
+    ),
+  )
+
+  return nextItems.filter(Boolean)
 }
 
 export async function getJournalStatus() {
@@ -521,12 +567,40 @@ export async function importReadableData(data) {
 export async function importProtectedData(data) {
   const symptomEntries = Array.isArray(data?.symptomEntries) ? data.symptomEntries : null
   const cycleEntries = Array.isArray(data?.cycleEntries) ? data.cycleEntries : null
-  const salt = data?.protection?.salt
-  const unlockCheck = data?.protection?.unlockCheck
 
-  if (!symptomEntries || !cycleEntries || !salt || !unlockCheck) {
+  if (!hasRememberedSessionKey()) {
+    throw new JournalLockedError()
+  }
+
+  const protection = await getProtectionConfig()
+  const key = requireSessionKey()
+
+  if (!protection.enabled || !protection.salt || !protection.unlockCheck) {
+    throw new Error('Journal metadata appears inconsistent. Please lock and unlock your journal before importing.')
+  }
+
+  const currentUnlockCheck = await decryptData(key, protection.unlockCheck).catch(() => null)
+
+  if (currentUnlockCheck !== PROTECTION_CHECK_TEXT) {
+    throw new Error('Journal metadata appears inconsistent. Please lock and unlock your journal before importing.')
+  }
+
+  if (!symptomEntries || !cycleEntries) {
     throw new Error('Please choose a protected Aletheia export.')
   }
+
+  const everyRecordIsProtected = [...symptomEntries, ...cycleEntries].every(hasValidProtectedPayload)
+
+  if (!everyRecordIsProtected) {
+    throw new Error('Please choose a protected Aletheia export.')
+  }
+
+  await Promise.all([
+    Promise.all(symptomEntries.map((entry) => unprotectEntry(entry, key))),
+    Promise.all(cycleEntries.map((entry) => unprotectEntry(entry, key))),
+  ])
+
+  const unlockCheck = await encryptData(key, PROTECTION_CHECK_TEXT)
 
   await rewriteStores({
     symptomEntries: symptomEntries.map((entry) => ({
@@ -539,7 +613,7 @@ export async function importProtectedData(data) {
     })),
     protectionConfig: {
       enabled: true,
-      salt,
+      salt: protection.salt,
       unlockCheck,
     },
   })

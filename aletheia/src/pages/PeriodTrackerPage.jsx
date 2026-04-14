@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import EmptyState from '../components/EmptyState.jsx'
+import ErrorState from '../components/ErrorState.jsx'
 import LockedState from '../components/LockedState.jsx'
 import LoadingSpinner from '../components/LoadingSpinner.jsx'
+import WarningNotice from '../components/WarningNotice.jsx'
 import { JournalLockedError } from '../crypto/crypto.js'
 import { useDemo } from '../context/DemoContext.jsx'
 import { useTour } from '../context/TourContext.jsx'
-import { getCycleEntries, saveCycleEntry } from '../db/db.js'
+import { consumeJournalWarnings, getCycleEntries, saveCycleEntry } from '../db/db.js'
 import { cycleEntries as demoCycleEntries } from '../demo/demoData.js'
 import { getCyclePhase } from '../patterns/engine.js'
 
@@ -472,6 +474,8 @@ function PeriodTrackerPage() {
   const [savedKey, setSavedKey] = useState(null)
   const [visibleMonth, setVisibleMonth] = useState(() => createMonthDate(formatTodayForDateInput()))
   const [isLocked, setIsLocked] = useState(false)
+  const [loadError, setLoadError] = useState('')
+  const [warnings, setWarnings] = useState([])
   const sourceKey = isDemoMode ? 'demo' : 'db'
   const hasEntries = cycleEntries.length > 0
 
@@ -486,6 +490,8 @@ function PeriodTrackerPage() {
 
       setCycleEntries(entries)
       setIsLocked(false)
+      setLoadError('')
+      setWarnings(consumeJournalWarnings())
       setLoadedSource(sourceKey)
     })
       .catch((error) => {
@@ -495,8 +501,16 @@ function PeriodTrackerPage() {
 
         if (error instanceof JournalLockedError) {
           setIsLocked(true)
+          setLoadError('')
+          setWarnings([])
           setLoadedSource(sourceKey)
+          return
         }
+
+        setIsLocked(false)
+        setWarnings([])
+        setLoadError('Something went wrong loading your data. Please try again.')
+        setLoadedSource(sourceKey)
       })
 
     return () => {
@@ -558,6 +572,10 @@ function PeriodTrackerPage() {
     )
   }
 
+  if (loadError) {
+    return <ErrorState description={loadError} />
+  }
+
   const calendarDays = getCalendarDays(visibleMonth)
   const todayKey = formatTodayForDateInput()
   const selectedEntry = entryByDate.get(formState.date)
@@ -600,6 +618,7 @@ function PeriodTrackerPage() {
 
   return (
     <div className="page-shell" style={{ maxWidth: '860px' }}>
+      <WarningNotice warnings={warnings} />
       {savedKey !== null && (
         <div className="toast" key={savedKey} role="status" aria-live="polite">
           <span className="toast__dot" aria-hidden="true">

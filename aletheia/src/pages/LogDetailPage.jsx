@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import ErrorState from '../components/ErrorState.jsx'
 import LockedState from '../components/LockedState.jsx'
 import LoadingSpinner from '../components/LoadingSpinner.jsx'
+import WarningNotice from '../components/WarningNotice.jsx'
 import { JournalLockedError } from '../crypto/crypto.js'
 import { useDemo } from '../context/DemoContext.jsx'
-import { getCycleEntries, getSymptomEntries } from '../db/db.js'
+import { consumeJournalWarnings, getCycleEntries, getSymptomEntries } from '../db/db.js'
 import { cycleEntries as demoCycleEntries, symptomEntries as demoSymptomEntries } from '../demo/demoData.js'
 
 function formatDate(value, includeTime = false) {
@@ -40,6 +42,8 @@ function LogDetailPage() {
   const [entry, setEntry] = useState(null)
   const [loadedSource, setLoadedSource] = useState('')
   const [isLocked, setIsLocked] = useState(false)
+  const [loadError, setLoadError] = useState('')
+  const [warnings, setWarnings] = useState([])
   const sourceKey = isDemoMode ? 'demo' : 'db'
 
   useEffect(() => {
@@ -61,6 +65,8 @@ function LogDetailPage() {
 
       setEntry(foundEntry || null)
       setIsLocked(false)
+      setLoadError('')
+      setWarnings(consumeJournalWarnings())
       setLoadedSource(sourceKey)
     })
       .catch((error) => {
@@ -70,8 +76,16 @@ function LogDetailPage() {
 
         if (error instanceof JournalLockedError) {
           setIsLocked(true)
+          setLoadError('')
+          setWarnings([])
           setLoadedSource(sourceKey)
+          return
         }
+
+        setIsLocked(false)
+        setWarnings([])
+        setLoadError('Something went wrong loading your data. Please try again.')
+        setLoadedSource(sourceKey)
       })
 
     return () => {
@@ -92,6 +106,10 @@ function LogDetailPage() {
     )
   }
 
+  if (loadError) {
+    return <ErrorState description={loadError} />
+  }
+
   if (!entry) {
     return (
       <div className="page-shell" style={{ maxWidth: '760px' }}>
@@ -107,6 +125,7 @@ function LogDetailPage() {
 
   return (
     <div className="page-shell" style={{ maxWidth: '760px', display: 'grid', gap: '20px' }}>
+      <WarningNotice warnings={warnings} />
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'center' }}>
         <div>
           <h1 style={{ marginBottom: '6px' }}>

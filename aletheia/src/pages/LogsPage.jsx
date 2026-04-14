@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import ErrorState from '../components/ErrorState.jsx'
 import LockedState from '../components/LockedState.jsx'
 import LoadingSpinner from '../components/LoadingSpinner.jsx'
+import WarningNotice from '../components/WarningNotice.jsx'
 import { JournalLockedError } from '../crypto/crypto.js'
 import { useDemo } from '../context/DemoContext.jsx'
 import { useTour } from '../context/TourContext.jsx'
-import { getCycleEntries, getSymptomEntries } from '../db/db.js'
+import { consumeJournalWarnings, getCycleEntries, getSymptomEntries } from '../db/db.js'
 import { cycleEntries as demoCycleEntries, symptomEntries as demoSymptomEntries } from '../demo/demoData.js'
 
 function formatDate(value, includeTime = false) {
@@ -28,6 +30,8 @@ function LogsPage() {
   const [entries, setEntries] = useState([])
   const [loadedSource, setLoadedSource] = useState('')
   const [isLocked, setIsLocked] = useState(false)
+  const [loadError, setLoadError] = useState('')
+  const [warnings, setWarnings] = useState([])
   const sourceKey = isDemoMode ? 'demo' : 'db'
 
   useEffect(() => {
@@ -61,6 +65,8 @@ function LogsPage() {
 
       setEntries(allEntries)
       setIsLocked(false)
+      setLoadError('')
+      setWarnings(consumeJournalWarnings())
       setLoadedSource(sourceKey)
     })
       .catch((error) => {
@@ -70,8 +76,16 @@ function LogsPage() {
 
         if (error instanceof JournalLockedError) {
           setIsLocked(true)
+          setLoadError('')
+          setWarnings([])
           setLoadedSource(sourceKey)
+          return
         }
+
+        setIsLocked(false)
+        setWarnings([])
+        setLoadError('Something went wrong loading your data. Please try again.')
+        setLoadedSource(sourceKey)
       })
 
     return () => {
@@ -92,8 +106,13 @@ function LogsPage() {
     )
   }
 
+  if (loadError) {
+    return <ErrorState description={loadError} />
+  }
+
   return (
     <div className="page-shell" style={{ maxWidth: '920px', display: 'grid', gap: '20px' }}>
+      <WarningNotice warnings={warnings} />
       <div>
         <h1 style={{ marginBottom: '6px' }}>All logs</h1>
         <p style={{ color: 'var(--color-text-muted)' }}>Browse your full symptom and cycle history.</p>

@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import LockedState from '../components/LockedState.jsx'
 import LoadingSpinner from '../components/LoadingSpinner.jsx'
+import WarningNotice from '../components/WarningNotice.jsx'
 import { JournalLockedError } from '../crypto/crypto.js'
 import { useDemo } from '../context/DemoContext.jsx'
 import { useTour } from '../context/TourContext.jsx'
-import { getCycleEntries, getSymptomEntries } from '../db/db.js'
+import { consumeJournalWarnings, getCycleEntries, getSymptomEntries } from '../db/db.js'
 import { cycleEntries as demoCycleEntries, symptomEntries as demoSymptomEntries } from '../demo/demoData.js'
 import { averagePainLast30Days } from '../patterns/engine.js'
 import { generateReport } from '../reports/generateReport.js'
@@ -151,6 +152,7 @@ function DashboardPage() {
   const [cycleEntries, setCycleEntries] = useState([])
   const [loadedSource, setLoadedSource] = useState('')
   const [isLocked, setIsLocked] = useState(false)
+  const [warnings, setWarnings] = useState([])
   const sourceKey = isDemoMode ? 'demo' : 'db'
 
   useEffect(() => {
@@ -168,6 +170,7 @@ function DashboardPage() {
       setSymptomEntries(nextSymptomEntries)
       setCycleEntries(nextCycleEntries)
       setIsLocked(false)
+      setWarnings(consumeJournalWarnings())
       setLoadedSource(sourceKey)
     })
       .catch((error) => {
@@ -246,6 +249,7 @@ function DashboardPage() {
 
   return (
     <div className="landing-shell">
+      <WarningNotice warnings={warnings} />
       <section className="landing-hero">
         <div
           data-tour-target="dashboard-hero"

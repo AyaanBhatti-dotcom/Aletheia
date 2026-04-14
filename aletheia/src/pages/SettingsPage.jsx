@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import WarningNotice from '../components/WarningNotice.jsx'
+import { JournalLockedError } from '../crypto/crypto.js'
 import {
   clearAllData,
+  consumeJournalWarnings,
   disableJournalLock,
   enableJournalLock,
   exportProtectedData,
@@ -67,6 +70,7 @@ function SettingsPage() {
     isUnlocked: false,
   })
   const [statusMessage, setStatusMessage] = useState('')
+  const [warnings, setWarnings] = useState([])
 
   useEffect(() => {
     let isMounted = true
@@ -93,6 +97,19 @@ function SettingsPage() {
     return status
   }
 
+  function applyJournalWarnings(fallbackMessage) {
+    const nextWarnings = consumeJournalWarnings()
+
+    if (nextWarnings.length > 0) {
+      setWarnings(nextWarnings)
+      setStatusMessage(fallbackMessage)
+      return true
+    }
+
+    setWarnings([])
+    return false
+  }
+
   async function handleTurnOnLock(event) {
     event.preventDefault()
 
@@ -102,6 +119,7 @@ function SettingsPage() {
     }
 
     await enableJournalLock(passphrase)
+    setWarnings([])
     await refreshJournalStatus()
     setStatusMessage('Journal lock is on, and your entries are open for this session.')
   }
@@ -116,6 +134,7 @@ function SettingsPage() {
 
     try {
       await unlockJournal(passphrase)
+      setWarnings([])
       await refreshJournalStatus()
       setStatusMessage('Journal opened for this session.')
     } catch {
@@ -125,6 +144,7 @@ function SettingsPage() {
 
   async function handleLockJournalNow() {
     lockJournal()
+    setWarnings([])
     await refreshJournalStatus()
     setPassphrase('')
     setStatusMessage('Journal locked.')
@@ -136,16 +156,24 @@ function SettingsPage() {
       return
     }
 
-    await disableJournalLock()
-    await refreshJournalStatus()
-    setPassphrase('')
-    setStatusMessage('Journal lock turned off on this device.')
+    try {
+      await disableJournalLock()
+      await refreshJournalStatus()
+      setPassphrase('')
+      if (!applyJournalWarnings('Journal lock turned off on this device.')) {
+        setStatusMessage('Journal lock turned off on this device.')
+      }
+    } catch {
+      await refreshJournalStatus()
+      setStatusMessage('One or more records could not be read, so the journal lock was not removed.')
+    }
   }
 
   async function handleProtectedExport() {
     try {
       const data = await exportProtectedData()
       downloadJsonFile(data, 'aletheia-protected-export.json')
+      setWarnings([])
       setStatusMessage('Protected export saved.')
     } catch {
       setStatusMessage('Turn on the journal lock before making a protected export.')
@@ -156,7 +184,9 @@ function SettingsPage() {
     try {
       const data = await exportReadableData()
       downloadJsonFile(data, 'aletheia-readable-export.json')
-      setStatusMessage('Readable export saved.')
+      if (!applyJournalWarnings('Readable export saved.')) {
+        setStatusMessage('Readable export saved.')
+      }
     } catch {
       setStatusMessage('Open your journal first to make a readable export.')
     }
@@ -168,6 +198,7 @@ function SettingsPage() {
     )
     if (!confirmed) return
     await clearAllData()
+    setWarnings([])
     setStatusMessage('All data cleared.')
   }
 
@@ -198,17 +229,29 @@ function SettingsPage() {
         const result = await importProtectedData(parsed)
         await refreshJournalStatus()
         setPassphrase('')
+        setWarnings([])
         setStatusMessage(`Protected journal restored with ${result.symptomCount} symptom entries and ${result.cycleCount} cycle entries. Enter your passphrase to open it.`)
         return
       }
 
       const result = await importReadableData(parsed)
       await refreshJournalStatus()
-      setStatusMessage(`Import complete: ${result.symptomCount} symptom entries and ${result.cycleCount} cycle entries restored.`)
+      if (!applyJournalWarnings(`Import complete: ${result.symptomCount} symptom entries and ${result.cycleCount} cycle entries restored.`)) {
+        setStatusMessage(`Import complete: ${result.symptomCount} symptom entries and ${result.cycleCount} cycle entries restored.`)
+      }
     } catch (error) {
+      if (error instanceof JournalLockedError) {
+        setWarnings([])
+        setStatusMessage('Open your journal first before restoring a protected backup.')
+      } else if (error instanceof Error && error.message === 'Journal metadata appears inconsistent. Please lock and unlock your journal before importing.') {
+        setWarnings([])
+        setStatusMessage('Journal metadata appears inconsistent. Please lock and unlock your journal before importing.')
+      } else
       if (error instanceof Error && (error.message === 'too-large-file' || error.message === 'too-many-records')) {
+        setWarnings([])
         setStatusMessage('This file is too large to import safely.')
       } else {
+        setWarnings([])
         setStatusMessage('Import did not go through. Choose a readable or protected Aletheia backup, and if needed open your journal first.')
       }
     } finally {
@@ -476,6 +519,8 @@ function SettingsPage() {
           {statusMessage}
         </div>
       )}
+
+      <WarningNotice warnings={warnings} />
     </div>
   )
 }

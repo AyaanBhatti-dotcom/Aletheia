@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import EmptyState from '../components/EmptyState.jsx'
+import ErrorState from '../components/ErrorState.jsx'
 import LockedState from '../components/LockedState.jsx'
 import LoadingSpinner from '../components/LoadingSpinner.jsx'
+import WarningNotice from '../components/WarningNotice.jsx'
 import { JournalLockedError } from '../crypto/crypto.js'
 import { useDemo } from '../context/DemoContext.jsx'
 import { useTour } from '../context/TourContext.jsx'
-import { getCycleEntries, getSymptomEntries } from '../db/db.js'
+import { consumeJournalWarnings, getCycleEntries, getSymptomEntries } from '../db/db.js'
 import { cycleEntries as demoCycleEntries, symptomEntries as demoSymptomEntries } from '../demo/demoData.js'
 import {
   averagePainLast30Days,
@@ -55,6 +57,8 @@ function InsightsPage() {
   const [cycleEntries, setCycleEntries] = useState([])
   const [loadedSource, setLoadedSource] = useState('')
   const [isLocked, setIsLocked] = useState(false)
+  const [loadError, setLoadError] = useState('')
+  const [warnings, setWarnings] = useState([])
   const sourceKey = isDemoMode ? 'demo' : 'db'
 
   useEffect(() => {
@@ -68,6 +72,8 @@ function InsightsPage() {
       setSymptomEntries(nextSymptomEntries)
       setCycleEntries(nextCycleEntries)
       setIsLocked(false)
+      setLoadError('')
+      setWarnings(consumeJournalWarnings())
       setLoadedSource(sourceKey)
     })
       .catch((error) => {
@@ -75,8 +81,16 @@ function InsightsPage() {
 
         if (error instanceof JournalLockedError) {
           setIsLocked(true)
+          setLoadError('')
+          setWarnings([])
           setLoadedSource(sourceKey)
+          return
         }
+
+        setIsLocked(false)
+        setWarnings([])
+        setLoadError('Something went wrong loading your data. Please try again.')
+        setLoadedSource(sourceKey)
       })
 
     return () => { isMounted = false }
@@ -95,11 +109,16 @@ function InsightsPage() {
     )
   }
 
+  if (loadError) {
+    return <ErrorState description={loadError} />
+  }
+
   const totalEntries = symptomEntries.length + cycleEntries.length
 
   if (totalEntries < 7) {
     return (
       <div className="page-shell" style={{ maxWidth: '600px' }}>
+        <WarningNotice warnings={warnings} />
         <div style={{ paddingBottom: '4px', marginBottom: '14px' }}>
           <h1 style={{ marginBottom: '6px' }}>Insights</h1>
           <p style={{ fontSize: '14px', color: 'var(--color-text-muted)', fontWeight: 500 }}>
@@ -131,6 +150,7 @@ function InsightsPage() {
 
   return (
     <div className="page-shell" style={{ maxWidth: '680px', display: 'grid', gap: '14px' }}>
+      <WarningNotice warnings={warnings} />
 
       {/* Header */}
       <div style={{ paddingBottom: '4px' }}>

@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import EmptyState from '../components/EmptyState.jsx'
+import ErrorState from '../components/ErrorState.jsx'
 import LockedState from '../components/LockedState.jsx'
 import LoadingSpinner from '../components/LoadingSpinner.jsx'
+import WarningNotice from '../components/WarningNotice.jsx'
 import DOMPurify from 'dompurify'
 import { JournalLockedError } from '../crypto/crypto.js'
-import { getSymptomEntries, saveSymptomEntry } from '../db/db.js'
+import { consumeJournalWarnings, getSymptomEntries, saveSymptomEntry } from '../db/db.js'
 import { useDemo } from '../context/DemoContext.jsx'
 import { useTour } from '../context/TourContext.jsx'
 import { symptomEntries as demoSymptomEntries } from '../demo/demoData.js'
@@ -100,6 +102,8 @@ function SymptomLogPage() {
   const [loadedSource, setLoadedSource] = useState('')
   const [savedKey, setSavedKey] = useState(null)
   const [isLocked, setIsLocked] = useState(false)
+  const [loadError, setLoadError] = useState('')
+  const [warnings, setWarnings] = useState([])
   const sourceKey = isDemoMode ? 'demo' : 'db'
 
   useEffect(() => {
@@ -109,6 +113,8 @@ function SymptomLogPage() {
       if (!isMounted) return
       setHasEntries(entries.length > 0)
       setIsLocked(false)
+      setLoadError('')
+      setWarnings(consumeJournalWarnings())
       setLoadedSource(sourceKey)
     })
       .catch((error) => {
@@ -116,8 +122,16 @@ function SymptomLogPage() {
 
         if (error instanceof JournalLockedError) {
           setIsLocked(true)
+          setLoadError('')
+          setWarnings([])
           setLoadedSource(sourceKey)
+          return
         }
+
+        setIsLocked(false)
+        setWarnings([])
+        setLoadError('Something went wrong loading your data. Please try again.')
+        setLoadedSource(sourceKey)
       })
     return () => { isMounted = false }
   }, [isDemoMode, sourceKey])
@@ -187,8 +201,13 @@ function SymptomLogPage() {
     )
   }
 
+  if (loadError) {
+    return <ErrorState description={loadError} />
+  }
+
   return (
     <div className="page-shell" style={{ maxWidth: '600px' }}>
+      <WarningNotice warnings={warnings} />
       {savedKey !== null && (
         <div className="toast" key={savedKey} role="status" aria-live="polite">
           <span className="toast__dot" aria-hidden="true">✓</span>
