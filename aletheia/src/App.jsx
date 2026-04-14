@@ -151,9 +151,9 @@ const tourSteps = [
   },
   {
     eyebrow: 'Privacy',
-    title: 'Privacy and encryption are built into the app.',
+    title: 'Privacy and your journal lock are built into the app.',
     body:
-      'Settings lets you activate encryption with a passphrase, export or clear data, and review the privacy notice for how everything is stored.',
+      'Settings lets you turn on a journal lock with a passphrase, choose protected or readable exports, clear data, and review the privacy notice for how everything is stored.',
     route: '/settings',
     target: 'settings-encryption',
     highlights: [

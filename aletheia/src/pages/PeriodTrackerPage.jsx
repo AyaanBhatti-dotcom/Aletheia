@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import EmptyState from '../components/EmptyState.jsx'
+import LockedState from '../components/LockedState.jsx'
 import LoadingSpinner from '../components/LoadingSpinner.jsx'
+import { JournalLockedError } from '../crypto/crypto.js'
 import { useDemo } from '../context/DemoContext.jsx'
 import { useTour } from '../context/TourContext.jsx'
 import { getCycleEntries, saveCycleEntry } from '../db/db.js'
@@ -469,6 +471,7 @@ function PeriodTrackerPage() {
   const [loadedSource, setLoadedSource] = useState('')
   const [savedKey, setSavedKey] = useState(null)
   const [visibleMonth, setVisibleMonth] = useState(() => createMonthDate(formatTodayForDateInput()))
+  const [isLocked, setIsLocked] = useState(false)
   const sourceKey = isDemoMode ? 'demo' : 'db'
   const hasEntries = cycleEntries.length > 0
 
@@ -482,8 +485,19 @@ function PeriodTrackerPage() {
       }
 
       setCycleEntries(entries)
+      setIsLocked(false)
       setLoadedSource(sourceKey)
     })
+      .catch((error) => {
+        if (!isMounted) {
+          return
+        }
+
+        if (error instanceof JournalLockedError) {
+          setIsLocked(true)
+          setLoadedSource(sourceKey)
+        }
+      })
 
     return () => {
       isMounted = false
@@ -533,6 +547,15 @@ function PeriodTrackerPage() {
 
   if (loadedSource !== sourceKey) {
     return <LoadingSpinner />
+  }
+
+  if (isLocked) {
+    return (
+      <LockedState
+        title="Your journal is locked"
+        description="Unlock it in Settings before viewing or updating your cycle calendar."
+      />
+    )
   }
 
   const calendarDays = getCalendarDays(visibleMonth)

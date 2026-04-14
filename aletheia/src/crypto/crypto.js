@@ -2,10 +2,17 @@ const ITERATIONS = 200000
 const KEY_LENGTH = 256
 const IV_LENGTH = 12
 const SALT_LENGTH = 16
-const SALT_STORAGE_KEY = 'aletheia-pbkdf2-salt'
 
 const textEncoder = new TextEncoder()
 const textDecoder = new TextDecoder()
+let sessionKey = null
+
+export class JournalLockedError extends Error {
+  constructor(message = 'Journal is locked.') {
+    super(message)
+    this.name = 'JournalLockedError'
+  }
+}
 
 function bytesToBase64(bytes) {
   let binary = ''
@@ -28,33 +35,20 @@ function base64ToBytes(value) {
   return bytes
 }
 
-function getStoredSalt() {
-  const storedSalt = localStorage.getItem(SALT_STORAGE_KEY)
-
-  return storedSalt ? base64ToBytes(storedSalt) : null
-}
-
 function getSaltBytes(salt) {
   if (salt instanceof Uint8Array) {
-    localStorage.setItem(SALT_STORAGE_KEY, bytesToBase64(salt))
     return salt
   }
 
   if (typeof salt === 'string' && salt.length > 0) {
-    const saltBytes = textEncoder.encode(salt)
-    localStorage.setItem(SALT_STORAGE_KEY, bytesToBase64(saltBytes))
-    return saltBytes
+    return base64ToBytes(salt)
   }
 
-  const storedSalt = getStoredSalt()
+  throw new Error('A valid salt is required.')
+}
 
-  if (storedSalt) {
-    return storedSalt
-  }
-
-  const generatedSalt = crypto.getRandomValues(new Uint8Array(SALT_LENGTH))
-  localStorage.setItem(SALT_STORAGE_KEY, bytesToBase64(generatedSalt))
-  return generatedSalt
+export function createSalt() {
+  return bytesToBase64(crypto.getRandomValues(new Uint8Array(SALT_LENGTH)))
 }
 
 export async function generateKey(passphrase, salt) {
@@ -80,9 +74,29 @@ export async function generateKey(passphrase, salt) {
       name: 'AES-GCM',
       length: KEY_LENGTH,
     },
-    true,
+    false,
     ['encrypt', 'decrypt'],
   )
+}
+
+export function rememberSessionKey(key) {
+  sessionKey = key
+}
+
+export function clearRememberedSessionKey() {
+  sessionKey = null
+}
+
+export function hasRememberedSessionKey() {
+  return Boolean(sessionKey)
+}
+
+export function requireSessionKey() {
+  if (!sessionKey) {
+    throw new JournalLockedError()
+  }
+
+  return sessionKey
 }
 
 export async function encryptData(key, plaintext) {
@@ -102,12 +116,19 @@ export async function encryptData(key, plaintext) {
   payload.set(iv, 0)
   payload.set(ciphertextBytes, iv.length)
 
-  return bytesToBase64(payload)
+  return {
+    iv: bytesToBase64(iv),
+    payload: bytesToBase64(payload),
+  }
 }
 
-export async function decryptData(key, ciphertext) {
-  const payload = base64ToBytes(ciphertext)
-  const iv = payload.slice(0, IV_LENGTH)
+export async function decryptData(key, encryptedValue) {
+  const payload = typeof encryptedValue === 'string'
+    ? base64ToBytes(encryptedValue)
+    : base64ToBytes(encryptedValue.payload)
+  const iv = typeof encryptedValue === 'string'
+    ? payload.slice(0, IV_LENGTH)
+    : base64ToBytes(encryptedValue.iv)
   const encryptedBytes = payload.slice(IV_LENGTH)
   const plaintextBuffer = await crypto.subtle.decrypt(
     {

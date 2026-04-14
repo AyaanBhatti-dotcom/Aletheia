@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import LockedState from '../components/LockedState.jsx'
 import LoadingSpinner from '../components/LoadingSpinner.jsx'
+import { JournalLockedError } from '../crypto/crypto.js'
 import { useDemo } from '../context/DemoContext.jsx'
 import { getCycleEntries, getSymptomEntries } from '../db/db.js'
 import { cycleEntries as demoCycleEntries, symptomEntries as demoSymptomEntries } from '../demo/demoData.js'
@@ -19,6 +21,10 @@ function formatDate(value, includeTime = false) {
   return date.toLocaleDateString()
 }
 
+function isSafePhotoSource(value) {
+  return typeof value === 'string' && /^data:image\/[a-z0-9.+-]+;base64,[a-z0-9+/=\s]+$/i.test(value.trim())
+}
+
 function DetailRow({ label, value }) {
   return (
     <div className="detail-row">
@@ -33,6 +39,7 @@ function LogDetailPage() {
   const { entryId, entryType } = useParams()
   const [entry, setEntry] = useState(null)
   const [loadedSource, setLoadedSource] = useState('')
+  const [isLocked, setIsLocked] = useState(false)
   const sourceKey = isDemoMode ? 'demo' : 'db'
 
   useEffect(() => {
@@ -53,8 +60,19 @@ function LogDetailPage() {
           : cycleEntries.find((item) => item.id === entryId)
 
       setEntry(foundEntry || null)
+      setIsLocked(false)
       setLoadedSource(sourceKey)
     })
+      .catch((error) => {
+        if (!isMounted) {
+          return
+        }
+
+        if (error instanceof JournalLockedError) {
+          setIsLocked(true)
+          setLoadedSource(sourceKey)
+        }
+      })
 
     return () => {
       isMounted = false
@@ -63,6 +81,15 @@ function LogDetailPage() {
 
   if (loadedSource !== sourceKey) {
     return <LoadingSpinner />
+  }
+
+  if (isLocked) {
+    return (
+      <LockedState
+        title="Your journal is locked"
+        description="Unlock it in Settings to read this entry."
+      />
+    )
   }
 
   if (!entry) {
@@ -104,8 +131,8 @@ function LogDetailPage() {
             <DetailRow label="Body areas" value={entry.bodyAreas?.join(', ') || 'None'} />
             <DetailRow label="Custom symptoms" value={entry.userSymptoms?.join(', ') || 'None'} />
             <DetailRow label="Notes" value={entry.notes?.trim() || 'No notes'} />
-            <DetailRow label="Photo" value={entry.photo ? 'Attached' : 'None'} />
-            {entry.photo && (
+            <DetailRow label="Photo" value={isSafePhotoSource(entry.photo) ? 'Attached' : 'None'} />
+            {isSafePhotoSource(entry.photo) && (
               <img
                 src={entry.photo}
                 alt="Symptom log attachment"

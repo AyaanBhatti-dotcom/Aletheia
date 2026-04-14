@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import LockedState from '../components/LockedState.jsx'
 import LoadingSpinner from '../components/LoadingSpinner.jsx'
+import { JournalLockedError } from '../crypto/crypto.js'
 import { useDemo } from '../context/DemoContext.jsx'
 import { useTour } from '../context/TourContext.jsx'
 import { getCycleEntries, getSymptomEntries } from '../db/db.js'
@@ -25,6 +27,7 @@ function LogsPage() {
   const { activeTourTarget, isTourOpen } = useTour()
   const [entries, setEntries] = useState([])
   const [loadedSource, setLoadedSource] = useState('')
+  const [isLocked, setIsLocked] = useState(false)
   const sourceKey = isDemoMode ? 'demo' : 'db'
 
   useEffect(() => {
@@ -57,8 +60,19 @@ function LogsPage() {
       ].sort((left, right) => new Date(right.timestamp) - new Date(left.timestamp))
 
       setEntries(allEntries)
+      setIsLocked(false)
       setLoadedSource(sourceKey)
     })
+      .catch((error) => {
+        if (!isMounted) {
+          return
+        }
+
+        if (error instanceof JournalLockedError) {
+          setIsLocked(true)
+          setLoadedSource(sourceKey)
+        }
+      })
 
     return () => {
       isMounted = false
@@ -67,6 +81,15 @@ function LogsPage() {
 
   if (loadedSource !== sourceKey) {
     return <LoadingSpinner />
+  }
+
+  if (isLocked) {
+    return (
+      <LockedState
+        title="Your journal is locked"
+        description="Unlock it in Settings to browse your symptom and cycle history."
+      />
+    )
   }
 
   return (

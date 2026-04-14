@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react'
 import EmptyState from '../components/EmptyState.jsx'
+import LockedState from '../components/LockedState.jsx'
 import LoadingSpinner from '../components/LoadingSpinner.jsx'
 import DOMPurify from 'dompurify'
+import { JournalLockedError } from '../crypto/crypto.js'
 import { getSymptomEntries, saveSymptomEntry } from '../db/db.js'
 import { useDemo } from '../context/DemoContext.jsx'
 import { useTour } from '../context/TourContext.jsx'
 import { symptomEntries as demoSymptomEntries } from '../demo/demoData.js'
 
 const USER_SYMPTOMS_STORAGE_KEY = 'userSymptoms'
+const MAX_PHOTO_SIZE_BYTES = 5 * 1024 * 1024
 
 const PAIN_LABELS = ['', 'Minimal', 'Mild', 'Noticeable', 'Moderate', 'Uncomfortable', 'Distressing', 'Severe', 'Intense', 'Agonizing', 'Unbearable']
 
@@ -92,9 +95,11 @@ function SymptomLogPage() {
   const [newSymptom, setNewSymptom] = useState('')
   const [notes, setNotes] = useState('')
   const [photo, setPhoto] = useState(null)
+  const [photoMessage, setPhotoMessage] = useState('')
   const [hasEntries, setHasEntries] = useState(false)
   const [loadedSource, setLoadedSource] = useState('')
   const [savedKey, setSavedKey] = useState(null)
+  const [isLocked, setIsLocked] = useState(false)
   const sourceKey = isDemoMode ? 'demo' : 'db'
 
   useEffect(() => {
@@ -103,8 +108,17 @@ function SymptomLogPage() {
     entriesPromise.then((entries) => {
       if (!isMounted) return
       setHasEntries(entries.length > 0)
+      setIsLocked(false)
       setLoadedSource(sourceKey)
     })
+      .catch((error) => {
+        if (!isMounted) return
+
+        if (error instanceof JournalLockedError) {
+          setIsLocked(true)
+          setLoadedSource(sourceKey)
+        }
+      })
     return () => { isMounted = false }
   }, [isDemoMode, sourceKey])
 
@@ -126,9 +140,22 @@ function SymptomLogPage() {
 
   async function handlePhotoChange(event) {
     const file = event.target.files?.[0]
-    if (!file) { setPhoto(null); return }
+    if (!file) {
+      setPhoto(null)
+      setPhotoMessage('')
+      return
+    }
+
+    if (file.size > MAX_PHOTO_SIZE_BYTES) {
+      setPhoto(null)
+      setPhotoMessage('This image is too large to add safely. Choose one under 5 MB.')
+      event.target.value = ''
+      return
+    }
+
     const base64 = await readFileAsBase64(file)
     setPhoto(base64)
+    setPhotoMessage('Photo added.')
   }
 
   async function handleSubmit(event) {
@@ -149,6 +176,15 @@ function SymptomLogPage() {
 
   if (loadedSource !== sourceKey) {
     return <LoadingSpinner />
+  }
+
+  if (isLocked) {
+    return (
+      <LockedState
+        title="Your journal is locked"
+        description="Unlock it in Settings before adding or reviewing symptom entries in this session."
+      />
+    )
   }
 
   return (
@@ -320,6 +356,11 @@ function SymptomLogPage() {
             onChange={handlePhotoChange}
             style={{ padding: '10px 14px', fontSize: '14px' }}
           />
+          {photoMessage && (
+            <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', fontWeight: 500 }}>
+              {photoMessage}
+            </p>
+          )}
         </div>
 
         {/* Save */}

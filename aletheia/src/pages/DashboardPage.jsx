@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import LockedState from '../components/LockedState.jsx'
 import LoadingSpinner from '../components/LoadingSpinner.jsx'
+import { JournalLockedError } from '../crypto/crypto.js'
 import { useDemo } from '../context/DemoContext.jsx'
 import { useTour } from '../context/TourContext.jsx'
 import { getCycleEntries, getSymptomEntries } from '../db/db.js'
@@ -148,6 +150,7 @@ function DashboardPage() {
   const [symptomEntries, setSymptomEntries] = useState([])
   const [cycleEntries, setCycleEntries] = useState([])
   const [loadedSource, setLoadedSource] = useState('')
+  const [isLocked, setIsLocked] = useState(false)
   const sourceKey = isDemoMode ? 'demo' : 'db'
 
   useEffect(() => {
@@ -164,8 +167,22 @@ function DashboardPage() {
 
       setSymptomEntries(nextSymptomEntries)
       setCycleEntries(nextCycleEntries)
+      setIsLocked(false)
       setLoadedSource(sourceKey)
     })
+      .catch((error) => {
+        if (!isMounted) {
+          return
+        }
+
+        if (error instanceof JournalLockedError) {
+          setIsLocked(true)
+          setLoadedSource(sourceKey)
+          return
+        }
+
+        throw error
+      })
 
     return () => {
       isMounted = false
@@ -174,6 +191,15 @@ function DashboardPage() {
 
   if (loadedSource !== sourceKey) {
     return <LoadingSpinner />
+  }
+
+  if (isLocked) {
+    return (
+      <LockedState
+        title="Your journal is locked"
+        description="Unlock it in Settings to see your entries, patterns, and report tools for this session."
+      />
+    )
   }
 
   const totalEntriesLogged = symptomEntries.length + cycleEntries.length

@@ -1,12 +1,23 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { clearAllData, getCycleEntries, getSymptomEntries, importAllData } from '../db/db.js'
-import { generateKey } from '../crypto/crypto.js'
+import {
+  clearAllData,
+  disableJournalLock,
+  enableJournalLock,
+  exportProtectedData,
+  exportReadableData,
+  getJournalStatus,
+  importProtectedData,
+  importReadableData,
+  lockJournal,
+  unlockJournal,
+} from '../db/db.js'
 import { useTour } from '../context/TourContext.jsx'
 
-const SESSION_KEY_STORAGE = 'aletheia-derived-key'
 const ONBOARDING_STORAGE_KEY = 'aletheia-onboarding-complete'
 const REPLAY_TOUR_EVENT = 'aletheia:replay-tour'
+const MAX_IMPORT_FILE_SIZE_BYTES = 5 * 1024 * 1024
+const MAX_IMPORT_RECORDS = 5000
 
 function downloadJsonFile(data, filename) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
@@ -51,39 +62,104 @@ function SecurityPillar({ title, body, icon }) {
 function SettingsPage() {
   const { activeTourTarget, isTourOpen } = useTour()
   const [passphrase, setPassphrase] = useState('')
-  const [isEncryptionActive, setIsEncryptionActive] = useState(
-    Boolean(sessionStorage.getItem(SESSION_KEY_STORAGE)),
-  )
+  const [journalStatus, setJournalStatus] = useState({
+    isLockEnabled: false,
+    isUnlocked: false,
+  })
   const [statusMessage, setStatusMessage] = useState('')
+
+  useEffect(() => {
+    let isMounted = true
+
+    getJournalStatus().then((status) => {
+      if (isMounted) {
+        setJournalStatus(status)
+      }
+    })
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   function handleReplayWelcomeTour() {
     localStorage.removeItem(ONBOARDING_STORAGE_KEY)
     window.dispatchEvent(new Event(REPLAY_TOUR_EVENT))
   }
 
-  async function handleActivateEncryption(event) {
+  async function refreshJournalStatus() {
+    const status = await getJournalStatus()
+    setJournalStatus(status)
+    return status
+  }
+
+  async function handleTurnOnLock(event) {
     event.preventDefault()
-    if (!passphrase.trim()) return
-    const key = await generateKey(passphrase)
-    const exportedKey = await crypto.subtle.exportKey('jwk', key)
-    sessionStorage.setItem(SESSION_KEY_STORAGE, JSON.stringify(exportedKey))
-    setIsEncryptionActive(true)
-    setStatusMessage('Session encryption activated.')
+
+    if (!passphrase.trim()) {
+      setStatusMessage('Choose a passphrase to turn on the journal lock.')
+      return
+    }
+
+    await enableJournalLock(passphrase)
+    await refreshJournalStatus()
+    setStatusMessage('Journal lock is on, and your entries are open for this session.')
   }
 
-  function handleDeactivateEncryption() {
-    sessionStorage.removeItem(SESSION_KEY_STORAGE)
-    setIsEncryptionActive(false)
+  async function handleOpenJournal(event) {
+    event.preventDefault()
+
+    if (!passphrase.trim()) {
+      setStatusMessage('Enter your passphrase to open this journal.')
+      return
+    }
+
+    try {
+      await unlockJournal(passphrase)
+      await refreshJournalStatus()
+      setStatusMessage('Journal opened for this session.')
+    } catch {
+      setStatusMessage('That passphrase did not open this journal. Try again or use a different backup.')
+    }
+  }
+
+  async function handleLockJournalNow() {
+    lockJournal()
+    await refreshJournalStatus()
     setPassphrase('')
-    setStatusMessage('Session encryption deactivated.')
+    setStatusMessage('Journal locked.')
   }
 
-  async function handleExportData() {
-    const [symptomEntries, cycleEntries] = await Promise.all([
-      getSymptomEntries(),
-      getCycleEntries(),
-    ])
-    downloadJsonFile({ symptomEntries, cycleEntries }, 'aletheia-data-export.json')
+  async function handleTurnOffLock() {
+    if (!journalStatus.isUnlocked) {
+      setStatusMessage('Open your journal first, then you can turn off the lock.')
+      return
+    }
+
+    await disableJournalLock()
+    await refreshJournalStatus()
+    setPassphrase('')
+    setStatusMessage('Journal lock turned off on this device.')
+  }
+
+  async function handleProtectedExport() {
+    try {
+      const data = await exportProtectedData()
+      downloadJsonFile(data, 'aletheia-protected-export.json')
+      setStatusMessage('Protected export saved.')
+    } catch {
+      setStatusMessage('Turn on the journal lock before making a protected export.')
+    }
+  }
+
+  async function handleReadableExport() {
+    try {
+      const data = await exportReadableData()
+      downloadJsonFile(data, 'aletheia-readable-export.json')
+      setStatusMessage('Readable export saved.')
+    } catch {
+      setStatusMessage('Open your journal first to make a readable export.')
+    }
   }
 
   async function handleClearData() {
@@ -100,19 +176,41 @@ function SettingsPage() {
     if (!file) return
 
     try {
-      const rawText = await file.text()
-      const parsed = JSON.parse(rawText)
-      const symptomEntries = Array.isArray(parsed?.symptomEntries) ? parsed.symptomEntries : null
-      const cycleEntries = Array.isArray(parsed?.cycleEntries) ? parsed.cycleEntries : null
-
-      if (!symptomEntries || !cycleEntries) {
-        throw new Error('Invalid data format')
+      if (file.size > MAX_IMPORT_FILE_SIZE_BYTES) {
+        throw new Error('too-large-file')
       }
 
-      const result = await importAllData(parsed)
+      const rawText = await file.text()
+
+      if (rawText.length > MAX_IMPORT_FILE_SIZE_BYTES) {
+        throw new Error('too-large-file')
+      }
+
+      const parsed = JSON.parse(rawText)
+      const symptomCount = Array.isArray(parsed?.symptomEntries) ? parsed.symptomEntries.length : 0
+      const cycleCount = Array.isArray(parsed?.cycleEntries) ? parsed.cycleEntries.length : 0
+
+      if (symptomCount + cycleCount > MAX_IMPORT_RECORDS) {
+        throw new Error('too-many-records')
+      }
+
+      if (parsed?.format === 'aletheia-protected-export') {
+        const result = await importProtectedData(parsed)
+        await refreshJournalStatus()
+        setPassphrase('')
+        setStatusMessage(`Protected journal restored with ${result.symptomCount} symptom entries and ${result.cycleCount} cycle entries. Enter your passphrase to open it.`)
+        return
+      }
+
+      const result = await importReadableData(parsed)
+      await refreshJournalStatus()
       setStatusMessage(`Import complete: ${result.symptomCount} symptom entries and ${result.cycleCount} cycle entries restored.`)
-    } catch {
-      setStatusMessage('Import failed. Please choose a valid Aletheia export JSON file.')
+    } catch (error) {
+      if (error instanceof Error && (error.message === 'too-large-file' || error.message === 'too-many-records')) {
+        setStatusMessage('This file is too large to import safely.')
+      } else {
+        setStatusMessage('Import did not go through. Choose a readable or protected Aletheia backup, and if needed open your journal first.')
+      }
     } finally {
       event.target.value = ''
     }
@@ -156,8 +254,8 @@ function SettingsPage() {
             )}
           />
           <SecurityPillar
-            title="Session encryption tools"
-            body="When you activate encryption, the app derives an AES-GCM key from your passphrase in the browser using PBKDF2 with SHA-256. That session key stays local to the current browser session and is not sent anywhere."
+            title="Journal lock"
+            body="When your journal lock is on, entries are stored in a protected form and open only after you enter your passphrase for the current session."
             icon={(
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="11" width="18" height="10" rx="2" />
@@ -204,14 +302,13 @@ function SettingsPage() {
         </div>
       </section>
 
-      {/* Encryption */}
+      {/* Journal lock */}
       <SettingsSection
-        title="Session encryption"
-        description="Protect your data with a passphrase for this browser session."
-        
+        title="Journal lock"
+        description="Use a passphrase to keep your entries protected on this device."
       >
         <form
-          onSubmit={handleActivateEncryption}
+          onSubmit={journalStatus.isLockEnabled ? handleOpenJournal : handleTurnOnLock}
           style={{ display: 'grid', gap: '12px' }}
           data-tour-target="settings-encryption"
           className={isTourOpen && activeTourTarget === 'settings-encryption' ? 'tour-highlight' : ''}
@@ -223,17 +320,22 @@ function SettingsPage() {
             <input
               id="passphrase"
               type="password"
-              placeholder="Enter a passphrase…"
+              placeholder={journalStatus.isLockEnabled ? 'Enter your passphrase…' : 'Create a passphrase…'}
               value={passphrase}
               onChange={(e) => setPassphrase(e.target.value)}
             />
           </div>
           <button type="submit" className="btn-primary">
-            Activate encryption
+            {journalStatus.isLockEnabled ? 'Open journal' : 'Turn on journal lock'}
           </button>
-          {isEncryptionActive && (
-            <button type="button" className="btn-secondary" onClick={handleDeactivateEncryption}>
-              Deactivate encryption
+          {journalStatus.isLockEnabled && journalStatus.isUnlocked && (
+            <button type="button" className="btn-secondary" onClick={handleLockJournalNow}>
+              Lock journal now
+            </button>
+          )}
+          {journalStatus.isLockEnabled && (
+            <button type="button" className="btn-secondary" onClick={handleTurnOffLock}>
+              Turn off journal lock
             </button>
           )}
         </form>
@@ -243,23 +345,27 @@ function SettingsPage() {
           alignItems: 'center',
           gap: '8px',
           padding: '10px 14px',
-          background: isEncryptionActive ? 'var(--color-success-bg)' : 'var(--color-accent)',
+          background: journalStatus.isLockEnabled ? 'var(--color-success-bg)' : 'var(--color-accent)',
           borderRadius: 'var(--radius-sm)',
-          border: `1px solid ${isEncryptionActive ? 'rgba(61,122,92,0.25)' : 'var(--color-border)'}`,
+          border: `1px solid ${journalStatus.isLockEnabled ? 'rgba(61,122,92,0.25)' : 'var(--color-border)'}`,
         }}>
           <div style={{
             width: 8,
             height: 8,
             borderRadius: '50%',
-            background: isEncryptionActive ? 'var(--color-success)' : 'var(--color-text-muted)',
+            background: journalStatus.isLockEnabled ? 'var(--color-success)' : 'var(--color-text-muted)',
             flexShrink: 0,
           }} />
           <span style={{
             fontSize: '13px',
             fontWeight: 600,
-            color: isEncryptionActive ? 'var(--color-success)' : 'var(--color-text-muted)',
+            color: journalStatus.isLockEnabled ? 'var(--color-success)' : 'var(--color-text-muted)',
           }}>
-            {isEncryptionActive ? 'Encryption active' : 'Encryption inactive'}
+            {journalStatus.isLockEnabled
+              ? journalStatus.isUnlocked
+                ? 'Journal open for this session'
+                : 'Journal lock is on'
+              : 'Journal lock is off'}
           </span>
         </div>
       </SettingsSection>
@@ -267,22 +373,30 @@ function SettingsPage() {
       {/* Export */}
       <SettingsSection
         title="Export data"
-        description="Download all your entries as a JSON file."
+        description="Choose a backup you can keep protected, or one you can read anywhere."
       >
-        <button type="button" className="btn-secondary" style={{ width: '100%', minHeight: 52 }} onClick={handleExportData}>
+        <button type="button" className="btn-secondary" style={{ width: '100%', minHeight: 52 }} onClick={handleProtectedExport}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
             <polyline points="7 10 12 15 17 10" />
             <line x1="12" y1="15" x2="12" y2="3" />
           </svg>
-          Export JSON
+          Protected export
+        </button>
+        <button type="button" className="btn-secondary" style={{ width: '100%', minHeight: 52 }} onClick={handleReadableExport}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          Readable export
         </button>
       </SettingsSection>
 
       {/* Import */}
       <SettingsSection
         title="Import data"
-        description="Restore entries from a previously exported JSON file. This replaces current data."
+        description="Restore a protected backup or a readable backup. This replaces current data."
       >
         <label
           className="btn-secondary"
