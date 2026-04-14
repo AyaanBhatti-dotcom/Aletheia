@@ -74,6 +74,46 @@ function formatFullDate(value) {
   return date.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })
 }
 
+function formatSavedLogLabel(savedAt, fallbackDate) {
+  const value = savedAt || fallbackDate
+
+  if (!value) {
+    return 'Saved entry'
+  }
+
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return 'Saved entry'
+  }
+
+  return date.toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
+
+function formatSavedLogCompactLabel(savedAt, fallbackDate) {
+  const value = savedAt || fallbackDate
+
+  if (!value) {
+    return 'Saved'
+  }
+
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return 'Saved'
+  }
+
+  return date.toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
+
 function formatDateKey(date) {
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -147,12 +187,6 @@ function getUniqueCycleEntries(entries) {
   })
 
   return [...latestByDate.values()].sort((left, right) => left.date.localeCompare(right.date))
-}
-
-function buildCycleLogNumberMap(entries) {
-  return new Map(
-    getUniqueCycleEntries(entries).map((entry, index) => [entry.id || entry.date, index + 1]),
-  )
 }
 
 function analyzeCycle(entries) {
@@ -523,6 +557,7 @@ function PeriodTrackerPage() {
   const [visibleMonth, setVisibleMonth] = useState(() => createMonthDate(formatTodayForDateInput()))
   const [isLocked, setIsLocked] = useState(false)
   const [loadError, setLoadError] = useState('')
+  const [isDaySpotlightOpen, setIsDaySpotlightOpen] = useState(false)
   const [warnings, setWarnings] = useState([])
   const sourceKey = isDemoMode ? 'demo' : 'db'
   const hasEntries = cycleEntries.length > 0
@@ -568,7 +603,6 @@ function PeriodTrackerPage() {
 
   const entryByDate = new Map()
   const uniqueCycleEntries = getUniqueCycleEntries(cycleEntries)
-  const cycleLogNumbers = buildCycleLogNumberMap(cycleEntries)
   uniqueCycleEntries.forEach((entry) => {
     entryByDate.set(entry.date, entry)
   })
@@ -580,6 +614,15 @@ function PeriodTrackerPage() {
   function selectDate(dateValue) {
     setFormState(getFormStateFromEntry(entryByDate.get(dateValue), dateValue))
     setVisibleMonth(createMonthDate(dateValue))
+  }
+
+  function handleCalendarDayClick(dateValue) {
+    selectDate(dateValue)
+    setIsDaySpotlightOpen(true)
+  }
+
+  function closeDaySpotlight() {
+    setIsDaySpotlightOpen(false)
   }
 
   async function handleSubmit(event) {
@@ -631,7 +674,6 @@ function PeriodTrackerPage() {
   const cycleAnalysis = analyzeCycle(cycleEntries)
   const selectedCycleInsights = getSelectedCycleInsights(formState.date, selectedEntry, cycleAnalysis)
   const selectedPrediction = getCalendarPrediction(formState.date, cycleAnalysis, Boolean(selectedEntry))
-  const selectedLogNumber = selectedEntry ? cycleLogNumbers.get(selectedEntry.id || selectedEntry.date) || 1 : null
   const forecastCards = [
     {
       label: 'Current phase',
@@ -798,7 +840,7 @@ function PeriodTrackerPage() {
                   key={day.key}
                   type="button"
                   className={`cycle-calendar__day${day.inMonth ? '' : ' cycle-calendar__day--outside'}${isSelected ? ' cycle-calendar__day--selected' : ''}${isToday ? ' cycle-calendar__day--today' : ''}${entry ? ` ${getFlowClass(entry.flowLevel)}` : ''}${prediction.marker ? ` cycle-calendar__day--predicted-${prediction.marker}` : ''}`}
-                  onClick={() => selectDate(day.key)}
+                  onClick={() => handleCalendarDayClick(day.key)}
                   aria-label={`${formatLongDate(day.key)}${prediction.label ? `. ${prediction.label}.` : ''}`}
                 >
                   <span className="cycle-calendar__day-number">{day.date.getDate()}</span>
@@ -806,10 +848,10 @@ function PeriodTrackerPage() {
                     <>
                       <span className="cycle-calendar__day-meta">
                         <span className="cycle-calendar__day-meta-full">
-                          {`Log #${cycleLogNumbers.get(entry.id || entry.date) || 1}`}
+                          {formatSavedLogLabel(entry.savedAt, entry.date)}
                         </span>
                         <span className="cycle-calendar__day-meta-compact">
-                          {`#${cycleLogNumbers.get(entry.id || entry.date) || 1}`}
+                          {formatSavedLogCompactLabel(entry.savedAt, entry.date)}
                         </span>
                       </span>
                       {entry.cycleDay && (
@@ -830,11 +872,12 @@ function PeriodTrackerPage() {
             })}
           </div>
 
-          <div className="tracker-day-spotlight">
+          {isDaySpotlightOpen && (
+          <div className="tracker-day-spotlight" role="dialog" aria-label="Selected day details" aria-live="polite">
             <div className="tracker-day-spotlight__header">
               <div>
                 <p className="privacy-badge">
-                  {selectedEntry ? `Cycle log #${selectedLogNumber}` : 'Selected day'}
+                  {selectedEntry ? formatSavedLogLabel(selectedEntry.savedAt, selectedEntry.date) : 'Selected day'}
                 </p>
                 <h3 className="tracker-day-spotlight__title">{formatFullDate(formState.date)}</h3>
                 <p className="tracker-day-spotlight__copy">
@@ -846,6 +889,27 @@ function PeriodTrackerPage() {
                 </p>
               </div>
               <div className="tracker-day-spotlight__marker">
+                <button
+                  type="button"
+                  className="tracker-day-spotlight__close"
+                  onClick={closeDaySpotlight}
+                  aria-label="Close selected day details"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M18 6L6 18" />
+                    <path d="M6 6l12 12" />
+                  </svg>
+                </button>
                 <span className="tracker-day-spotlight__marker-label">Status</span>
                 <strong className="tracker-day-spotlight__marker-value">
                   {selectedEntry ? (formState.flowLevel === 'none' ? 'Saved entry' : formState.flowLevel) : 'No saved entry'}
@@ -916,6 +980,7 @@ function PeriodTrackerPage() {
               </div>
             </div>
           </div>
+          )}
         </section>
 
         <div className="card" style={{ display: 'grid', gap: '10px' }}>

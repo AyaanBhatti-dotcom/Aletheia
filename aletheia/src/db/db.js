@@ -276,6 +276,7 @@ async function saveEntry(storeName, entry) {
   const nextEntry = {
     ...sanitizeEntryBeforeSave(entry),
     id: entry?.id || crypto.randomUUID(),
+    savedAt: new Date().toISOString(),
   }
 
   if (!protection.enabled) {

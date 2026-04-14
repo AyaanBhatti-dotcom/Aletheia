@@ -145,13 +145,25 @@ function PainDot({ score }) {
   return <span className="landing-entry__dot" style={{ background: color }} aria-hidden="true" />
 }
 
-function buildCycleLogNumberMap(cycleEntries) {
-  return new Map(
-    [...cycleEntries]
-      .filter((entry) => entry?.date)
-      .sort((left, right) => new Date(left.date) - new Date(right.date))
-      .map((entry, index) => [entry.id || entry.date, index + 1]),
-  )
+function formatSavedLogLabel(savedAt, fallbackDate) {
+  const value = savedAt || fallbackDate
+
+  if (!value) {
+    return 'Saved entry'
+  }
+
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return 'Saved entry'
+  }
+
+  return date.toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
 }
 
 function DashboardPage() {
@@ -227,7 +239,6 @@ function DashboardPage() {
       return daysAgo !== null && daysAgo <= 35
     })
     .sort((left, right) => new Date(right.date) - new Date(left.date))[0]
-  const cycleLogNumbers = buildCycleLogNumberMap(cycleEntries)
 
   const recentEntries = [
     ...symptomEntries
@@ -247,7 +258,7 @@ function DashboardPage() {
         entryType: 'cycle',
         type: 'Cycle log',
         timestamp: entry.date,
-        meta: `Log #${cycleLogNumbers.get(entry.id || entry.date) || 1}`,
+        meta: formatSavedLogLabel(entry.savedAt, entry.date),
         score: null,
       })),
   ]
