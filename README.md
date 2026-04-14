@@ -146,15 +146,7 @@ Your entries remain in your browser storage and never leave your device unless y
 - Hosted on GitHub Pages from this repository's `main` branch.
 - Default GitHub Pages URL pattern for this repo is:
 
-[https://ayaanbhatti-dotcom.github.io/Aletheia/](https://ayaanbhatti-dotcom.github.io/Aletheia/)
-
-(If Pages settings change, use the repository's homepage/deploy link.)
-
-### Build for production
-```bash
-cd aletheia
-npm run build
-```
+https://aletheiatracker.space/
 
 ---
 
