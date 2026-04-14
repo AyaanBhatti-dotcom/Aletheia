@@ -14,34 +14,34 @@ import { generateReport } from '../reports/generateReport.js'
 const PAIN_COLORS = ['', '#5A8C6B', '#5A8C6B', '#5A8C6B', '#D4943A', '#D4943A', '#D4943A', '#B84040', '#B84040', '#B84040', '#B84040']
 const ENCOURAGEMENT_BY_TIME = {
   early: [
-    'A gentle start still counts. You are showing up for yourself today.',
-    'One small check-in can make the rest of the day feel more manageable.',
-    'You do not need a perfect morning to make meaningful progress.',
-    'A quiet start is still a strong one. Your consistency matters.',
+    'Awake before the sun? Log now—you won\'t have to re-guess the details later.',
+    'Rough night. Pain level, where it is, whether anything helped. Done.',
+    'Doesn\'t have to be an essay. Time, a number, one sentence is enough for most visits.',
+    'Whatever hour this is, if it\'s written down, it\'s there when you need it.',
   ],
   morning: [
-    'You are building clarity one entry at a time, and that effort matters.',
-    'Today is a good day to notice what your body is asking for.',
-    'Small moments of care add up. You are doing better than you think.',
-    'The fact that you are checking in is already a meaningful win.',
+    'Before the day runs away—anything still hanging on from yesterday?',
+    'Felt different when you woke up? Say it now, before the day smudges it.',
+    'You\'ll misremember this by your next visit unless you jot it now.',
+    'This isn\'t your whole story. You can add another entry anytime.',
   ],
   afternoon: [
-    'You have made it through a lot already today. Keep being kind to yourself.',
-    'A midday pause can be powerful. Thank you for taking this moment.',
-    'Even brief check-ins help turn patterns into answers over time.',
-    'You are paying attention in a way that future-you will appreciate.',
+    'Something set you off? Rough order of events, while you still remember.',
+    'Meds, heat, food helped? Put that in—it matters when you look back.',
+    'Boring steady day? Still worth a line. You need those days for the pattern.',
+    'Two minutes now beats staring at the calendar next month going "what happened again?"',
   ],
   evening: [
-    'You made it to the evening. That is worth honoring.',
-    'Closing the day with a quick note is a quiet kind of care.',
-    'However today went, checking in now is still progress.',
-    'You do not need to do everything today. This step is enough.',
+    'Versus this morning: better, worse, same? They always ask that one.',
+    'Did symptoms mess with food, sleep, or plans? Note it while you still remember.',
+    'Half a thought is fine. Nobody needs a polished paragraph.',
+    'Log now so you\'re not rebuilding this from scratch at 2 a.m. if it spikes.',
   ],
   night: [
-    'Rest is productive too. Thank you for taking care of yourself tonight.',
-    'Even a late-night check-in can bring tomorrow a little more clarity.',
-    'You are allowed to end the day gently and still call it progress.',
-    'A few notes now can make the next day feel less heavy.',
+    'Still up? Pain level, where, which position hurts least. Enough.',
+    'Late log still counts.',
+    'Appointment soon? Skim the week—you\'ll want the details straight.',
+    'One sentence before you close the tab is enough.',
   ],
 }
 
@@ -145,6 +145,15 @@ function PainDot({ score }) {
   return <span className="landing-entry__dot" style={{ background: color }} aria-hidden="true" />
 }
 
+function buildCycleLogNumberMap(cycleEntries) {
+  return new Map(
+    [...cycleEntries]
+      .filter((entry) => entry?.date)
+      .sort((left, right) => new Date(left.date) - new Date(right.date))
+      .map((entry, index) => [entry.id || entry.date, index + 1]),
+  )
+}
+
 function DashboardPage() {
   const { isDemoMode, toggleDemo } = useDemo()
   const { activeTourTarget, isTourOpen } = useTour()
@@ -218,6 +227,7 @@ function DashboardPage() {
       return daysAgo !== null && daysAgo <= 35
     })
     .sort((left, right) => new Date(right.date) - new Date(left.date))[0]
+  const cycleLogNumbers = buildCycleLogNumberMap(cycleEntries)
 
   const recentEntries = [
     ...symptomEntries
@@ -237,7 +247,7 @@ function DashboardPage() {
         entryType: 'cycle',
         type: 'Cycle log',
         timestamp: entry.date,
-        meta: entry.flowLevel || 'No flow noted',
+        meta: `Log #${cycleLogNumbers.get(entry.id || entry.date) || 1}`,
         score: null,
       })),
   ]
@@ -256,9 +266,9 @@ function DashboardPage() {
           className={`landing-hero__copy${isTourOpen && activeTourTarget === 'dashboard-hero' ? ' tour-highlight' : ''}`}
         >
           <span className="landing-kicker">Aletheia</span>
-          <h1 className="landing-title">A quieter way to track what your body has been trying to tell you.</h1>
+          <h1 className="landing-title">Symptom and cycle logs in one place, on your device.</h1>
           <p className="landing-copy">
-            Keep symptoms, cycle changes, and private patterns in one local place designed for calm review, not clutter.
+            Record pain, bleeding, and cycle details locally. Use your timeline for yourself or to prepare for appointments—nothing is uploaded unless you export it.
           </p>
 
           {encouragement && (
@@ -305,7 +315,7 @@ function DashboardPage() {
               </svg>
               Local only
             </span>
-            <p className="landing-trust__copy">Stored in this browser, available when you need a clearer picture.</p>
+            <p className="landing-trust__copy">Data stays in this browser on this device until you export or clear it.</p>
           </div>
         </div>
 
@@ -345,7 +355,7 @@ function DashboardPage() {
             <h2>Last 7 entries</h2>
           </div>
           <div className="landing-history__actions">
-            <p className="landing-history__subcopy">A quick glance at the most recent notes in your timeline.</p>
+            <p className="landing-history__subcopy">Your latest symptom and cycle entries, newest first.</p>
             <Link to="/logs" className="btn-secondary landing-history__link">
               View all logs
             </Link>

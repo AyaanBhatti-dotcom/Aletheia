@@ -1026,6 +1026,124 @@ input[type="range"]::-moz-range-thumb {
   color: rgba(255, 255, 255, 0.82);
 }
 
+.tracker-day-spotlight {
+  margin-top: 16px;
+  padding: 20px;
+  border-radius: 24px;
+  border: 1px solid rgba(92, 61, 122, 0.12);
+  background:
+    radial-gradient(circle at top right, rgba(92, 61, 122, 0.1), transparent 34%),
+    linear-gradient(180deg, rgba(255, 250, 244, 0.98) 0%, rgba(249, 243, 234, 0.96) 100%);
+  box-shadow: 0 18px 40px rgba(63, 42, 86, 0.08);
+  display: grid;
+  gap: 18px;
+}
+
+.tracker-day-spotlight__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.tracker-day-spotlight__title {
+  margin: 10px 0 6px;
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 2vw, 2rem);
+  line-height: 1.05;
+}
+
+.tracker-day-spotlight__copy {
+  max-width: 58ch;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.tracker-day-spotlight__marker {
+  min-width: 150px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(92, 61, 122, 0.1);
+  display: grid;
+  gap: 4px;
+}
+
+.tracker-day-spotlight__marker-label,
+.tracker-day-spotlight__stat-label,
+.tracker-day-spotlight__section-label,
+.tracker-day-spotlight__rating span,
+.tracker-day-spotlight__row span {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.tracker-day-spotlight__marker-value {
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.tracker-day-spotlight__stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.tracker-day-spotlight__stat {
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(92, 61, 122, 0.08);
+  display: grid;
+  gap: 6px;
+}
+
+.tracker-day-spotlight__stat-value {
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+.tracker-day-spotlight__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 14px;
+}
+
+.tracker-day-spotlight__section {
+  padding: 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(92, 61, 122, 0.08);
+  display: grid;
+  gap: 14px;
+}
+
+.tracker-day-spotlight__list,
+.tracker-day-spotlight__ratings {
+  display: grid;
+  gap: 10px;
+}
+
+.tracker-day-spotlight__row,
+.tracker-day-spotlight__rating {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tracker-day-spotlight__row strong,
+.tracker-day-spotlight__rating strong {
+  text-align: right;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
 /* ── Landing ────────────────────────────────────── */
 
 .landing-shell {
@@ -1492,6 +1610,25 @@ input[type="range"]::-moz-range-thumb {
 
   .cycle-calendar__day-prediction-compact {
     display: inline;
+  }
+
+  .tracker-day-spotlight {
+    padding: 16px;
+    gap: 14px;
+  }
+
+  .tracker-day-spotlight__header,
+  .tracker-day-spotlight__grid {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+
+  .tracker-day-spotlight__marker {
+    min-width: 0;
+  }
+
+  .tracker-day-spotlight__stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .security-brief {

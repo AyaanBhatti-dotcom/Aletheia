@@ -16,7 +16,7 @@ const systemicBodyAreas = [
   'mood changes',
 ]
 const painTypes = ['sharp', 'dull', 'cramping', 'burning', 'stabbing', 'throbbing']
-const bloodColors = ['bright red', 'dark red', 'brown', 'pink', 'orange', 'purple']
+const bloodColors = ['bright red', 'dark red', 'brown', 'pink', 'purple', 'green']
 const flareOffsets = new Set([6, 7, 8, 24, 25, 26, 27, 44, 45, 46, 47, 48])
 
 function formatDate(date) {
@@ -106,22 +106,26 @@ function getDischarge(cycleDay, flowLevel) {
   }
 
   if (cycleDay >= 11 && cycleDay <= 15) {
-    return 'clear'
+    return 'egg white'
   }
 
-  if (cycleDay >= 16 && cycleDay <= 20) {
+  if (cycleDay >= 16 && cycleDay <= 18) {
+    return 'watery cervical fluid'
+  }
+
+  if (cycleDay >= 19 && cycleDay <= 22) {
     return 'white/creamy'
   }
 
-  if (cycleDay >= 21 && cycleDay <= 24) {
-    return 'unusual texture'
+  if (cycleDay >= 23 && cycleDay <= 24) {
+    return 'pasty'
   }
 
   return 'yellow'
 }
 
 function getScaleValue(base, offset) {
-  return Math.max(0, Math.min(4, base + (offset % 2)))
+  return Math.max(0, Math.min(10, (base + (offset % 2)) * 2))
 }
 
 function getPainScore(offset) {
@@ -165,15 +169,25 @@ function getPainTypes(offset, isFlare) {
 }
 
 function getNotes(offset, isFlare) {
+  const flareNotes = [
+    'Bad from mid-morning on. Bloating + BM hurt; stayed home.',
+    'Sharp cramps and low back. Maxed what I could take OTC; still flat on the couch.',
+    'Nausea most of the day. Pain spiked after dinner—heating pad only helped a little.',
+  ]
+
   if (isFlare) {
-    return 'Severe pelvic pain flare with increased fatigue and bowel symptoms.'
+    return flareNotes[offset % flareNotes.length]
   }
 
-  if (offset % 5 === 0) {
-    return 'Symptoms were present but manageable with rest and heat.'
-  }
+  const dayNotes = [
+    'Dull ache on and off, maybe 3/10. Desk job was fine; worse driving home.',
+    'Light day overall. Short walk was OK, sore for an hour after.',
+    'Heavier pelvic pressure tonight, nothing dramatic. In bed early.',
+    'Forgot to open the app until now—mostly twinges, no meds.',
+    'Period-ish but workable. Heat + one dose of painkiller; slept OK.',
+  ]
 
-  return 'Baseline symptoms with mild interference during the day.'
+  return dayNotes[offset % dayNotes.length]
 }
 
 export const symptomEntries = Array.from({ length: 60 }, (_, offset) => {

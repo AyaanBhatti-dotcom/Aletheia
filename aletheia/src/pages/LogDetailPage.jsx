@@ -27,6 +27,14 @@ function isSafePhotoSource(value) {
   return typeof value === 'string' && /^data:image\/[a-z0-9.+-]+;base64,[a-z0-9+/=\s]+$/i.test(value.trim())
 }
 
+function formatListValue(value) {
+  if (Array.isArray(value)) {
+    return value.join(', ') || 'Not set'
+  }
+
+  return value || 'Not set'
+}
+
 function DetailRow({ label, value }) {
   return (
     <div className="detail-row">
@@ -163,9 +171,9 @@ function LogDetailPage() {
           <>
             <DetailRow label="Cycle day" value={entry.cycleDay || 'Not set'} />
             <DetailRow label="Flow level" value={entry.flowLevel || 'Not set'} />
-            <DetailRow label="Blood color" value={entry.bloodColor || 'Not set'} />
-            <DetailRow label="Clots" value={entry.clots || 'Not set'} />
-            <DetailRow label="Discharge" value={entry.discharge || 'Not set'} />
+            <DetailRow label="Blood color" value={formatListValue(entry.bloodColor)} />
+            <DetailRow label="Clots" value={formatListValue(entry.clots)} />
+            <DetailRow label="Discharge" value={formatListValue(entry.discharge)} />
             <DetailRow label="Breast tenderness" value={entry.breastTenderness ?? 0} />
             <DetailRow label="Bloating" value={entry.bloating ?? 0} />
             <DetailRow label="Pelvic pain" value={entry.pelvicPain ?? entry.cervicalPain ?? 0} />

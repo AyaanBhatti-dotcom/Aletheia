@@ -355,7 +355,7 @@ function SymptomLogPage() {
           <label className="field-label" htmlFor="log-notes">Notes</label>
           <textarea
             id="log-notes"
-            placeholder="Anything else worth noting today…"
+            placeholder="e.g. what triggered it, what helped, work/school impact, sleep"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows="4"

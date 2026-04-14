@@ -12,17 +12,19 @@ import { cycleEntries as demoCycleEntries } from '../demo/demoData.js'
 import { getCyclePhase } from '../patterns/engine.js'
 
 const flowLevels = ['none', 'spotting', 'light', 'moderate', 'heavy', 'very heavy']
-const bloodColors = ['bright red', 'dark red', 'brown', 'pink', 'orange', 'purple']
+const bloodColors = ['bright red', 'dark red', 'brown', 'pink', 'purple', 'green']
 const clotOptions = ['none', 'small clots', 'large clots']
 const dischargeOptions = [
   'none',
-  'clear',
+  'egg white',
+  'pasty',
+  'watery cervical fluid',
   'white/creamy',
   'yellow',
   'brown/old blood',
   'unusual texture',
 ]
-const severityLabels = ['None', 'Mild', 'Moderate', 'Severe', 'Very severe']
+const severityLabels = ['None', 'Very mild', 'Mild', 'Noticeable', 'Moderate', 'Uncomfortable', 'Distressing', 'Severe', 'Intense', 'Very intense', 'Extreme']
 const weekdayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const BLEEDING_FLOW_LEVELS = new Set(['spotting', 'light', 'moderate', 'heavy', 'very heavy'])
 const MS_PER_DAY = 24 * 60 * 60 * 1000
@@ -60,6 +62,16 @@ function formatLongDate(value) {
   }
 
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+}
+
+function formatFullDate(value) {
+  const date = new Date(`${value}T12:00:00`)
+
+  if (Number.isNaN(date.getTime())) {
+    return value
+  }
+
+  return date.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })
 }
 
 function formatDateKey(date) {
@@ -117,6 +129,14 @@ function roundToNearestInt(value) {
   return Math.round(value)
 }
 
+function formatListValue(value, emptyLabel = 'Not logged') {
+  if (Array.isArray(value)) {
+    return value.length > 0 ? value.join(', ') : emptyLabel
+  }
+
+  return value || emptyLabel
+}
+
 function getUniqueCycleEntries(entries) {
   const latestByDate = new Map()
 
@@ -127,6 +147,12 @@ function getUniqueCycleEntries(entries) {
   })
 
   return [...latestByDate.values()].sort((left, right) => left.date.localeCompare(right.date))
+}
+
+function buildCycleLogNumberMap(entries) {
+  return new Map(
+    getUniqueCycleEntries(entries).map((entry, index) => [entry.id || entry.date, index + 1]),
+  )
 }
 
 function analyzeCycle(entries) {
@@ -316,23 +342,6 @@ function getFlowClass(flowLevel) {
   return flowLevel ? `cycle-calendar__day--${flowLevel.replace(/\s+/g, '-')}` : ''
 }
 
-function getCompactFlowLabel(flowLevel) {
-  switch (flowLevel) {
-    case 'spotting':
-      return 'Spot'
-    case 'light':
-      return 'Light'
-    case 'moderate':
-      return 'Mod'
-    case 'heavy':
-      return 'Heavy'
-    case 'very heavy':
-      return 'V heavy'
-    default:
-      return 'None'
-  }
-}
-
 function getCompactPredictionLabel(marker) {
   switch (marker) {
     case 'period':
@@ -351,15 +360,28 @@ function getDefaultFormState(dateValue) {
     id: null,
     date: dateValue,
     flowLevel: 'none',
-    bloodColor: 'bright red',
-    clots: 'none',
-    discharge: 'none',
+    bloodColor: [],
+    clots: [],
+    discharge: [],
     breastTenderness: 0,
     bloating: 0,
     pelvicPain: 0,
     systemicPain: 0,
     cycleDay: '',
   }
+}
+
+function normalizeMultiSelectValue(value) {
+  if (Array.isArray(value)) {
+    const normalizedValues = value.filter((item) => typeof item === 'string' && item.trim().length > 0)
+    return normalizedValues
+  }
+
+  if (typeof value === 'string' && value.trim().length > 0) {
+    return [value]
+  }
+
+  return []
 }
 
 function getFormStateFromEntry(entry, dateValue) {
@@ -371,9 +393,9 @@ function getFormStateFromEntry(entry, dateValue) {
     id: entry.id || null,
     date: dateValue,
     flowLevel: entry.flowLevel || 'none',
-    bloodColor: entry.bloodColor || 'bright red',
-    clots: entry.clots || 'none',
-    discharge: entry.discharge || 'none',
+    bloodColor: normalizeMultiSelectValue(entry.bloodColor),
+    clots: normalizeMultiSelectValue(entry.clots),
+    discharge: normalizeMultiSelectValue(entry.discharge),
     breastTenderness: entry.breastTenderness ?? 0,
     bloating: entry.bloating ?? 0,
     pelvicPain: entry.pelvicPain ?? entry.cervicalPain ?? 0,
@@ -413,6 +435,32 @@ function SingleSelect({ options, value, onChange, label }) {
   )
 }
 
+function MultiSelect({ options, values, onChange, label }) {
+  function toggleValue(option) {
+    const nextValues = values.includes(option)
+      ? values.filter((value) => value !== option)
+      : [...values, option]
+
+    onChange(nextValues)
+  }
+
+  return (
+    <div className="card" style={{ display: 'grid', gap: '12px' }}>
+      <div className="field-label">{label}</div>
+      <div className="pill-group" role="group" aria-label={label}>
+        {options.map((option) => (
+          <PillToggle
+            key={option}
+            label={option}
+            active={values.includes(option)}
+            onToggle={() => toggleValue(option)}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function ScaleField({ id, label, value, onChange }) {
   return (
     <div className="card" style={{ display: 'grid', gap: '14px' }}>
@@ -436,18 +484,18 @@ function ScaleField({ id, label, value, onChange }) {
             paddingBottom: '5px',
           }}
         >
-          {severityLabels[value]}
+          {severityLabels[value] || ''}
         </span>
       </div>
       <input
         id={id}
         type="range"
         min="0"
-        max="4"
+        max="10"
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
-        style={sliderBackground(value, 0, 4)}
-        aria-label={`${label}: ${value}, ${severityLabels[value]}`}
+        style={sliderBackground(value, 0, 10)}
+        aria-label={`${label}: ${value}, ${severityLabels[value] || ''}`}
       />
       <div
         style={{
@@ -459,7 +507,7 @@ function ScaleField({ id, label, value, onChange }) {
         }}
       >
         <span>None</span>
-        <span>Very severe</span>
+        <span>10 · Extreme</span>
       </div>
     </div>
   )
@@ -520,6 +568,7 @@ function PeriodTrackerPage() {
 
   const entryByDate = new Map()
   const uniqueCycleEntries = getUniqueCycleEntries(cycleEntries)
+  const cycleLogNumbers = buildCycleLogNumberMap(cycleEntries)
   uniqueCycleEntries.forEach((entry) => {
     entryByDate.set(entry.date, entry)
   })
@@ -581,6 +630,8 @@ function PeriodTrackerPage() {
   const selectedEntry = entryByDate.get(formState.date)
   const cycleAnalysis = analyzeCycle(cycleEntries)
   const selectedCycleInsights = getSelectedCycleInsights(formState.date, selectedEntry, cycleAnalysis)
+  const selectedPrediction = getCalendarPrediction(formState.date, cycleAnalysis, Boolean(selectedEntry))
+  const selectedLogNumber = selectedEntry ? cycleLogNumbers.get(selectedEntry.id || selectedEntry.date) || 1 : null
   const forecastCards = [
     {
       label: 'Current phase',
@@ -754,9 +805,11 @@ function PeriodTrackerPage() {
                   {entry && (
                     <>
                       <span className="cycle-calendar__day-meta">
-                        <span className="cycle-calendar__day-meta-full">{entry.flowLevel}</span>
+                        <span className="cycle-calendar__day-meta-full">
+                          {`Log #${cycleLogNumbers.get(entry.id || entry.date) || 1}`}
+                        </span>
                         <span className="cycle-calendar__day-meta-compact">
-                          {getCompactFlowLabel(entry.flowLevel)}
+                          {`#${cycleLogNumbers.get(entry.id || entry.date) || 1}`}
                         </span>
                       </span>
                       {entry.cycleDay && (
@@ -775,6 +828,93 @@ function PeriodTrackerPage() {
                 </button>
               )
             })}
+          </div>
+
+          <div className="tracker-day-spotlight">
+            <div className="tracker-day-spotlight__header">
+              <div>
+                <p className="privacy-badge">
+                  {selectedEntry ? `Cycle log #${selectedLogNumber}` : 'Selected day'}
+                </p>
+                <h3 className="tracker-day-spotlight__title">{formatFullDate(formState.date)}</h3>
+                <p className="tracker-day-spotlight__copy">
+                  {selectedEntry
+                    ? selectedCycleInsights.cycleDay
+                      ? `Cycle day ${selectedCycleInsights.cycleDay} in your ${formatPhaseName(selectedCycleInsights.phase).toLowerCase()} phase.`
+                      : `Saved entry in your ${formatPhaseName(selectedCycleInsights.phase).toLowerCase()} phase.`
+                    : selectedPrediction.label || 'Pick any day to review what was logged or what the calendar estimates there.'}
+                </p>
+              </div>
+              <div className="tracker-day-spotlight__marker">
+                <span className="tracker-day-spotlight__marker-label">Status</span>
+                <strong className="tracker-day-spotlight__marker-value">
+                  {selectedEntry ? (formState.flowLevel === 'none' ? 'Saved entry' : formState.flowLevel) : 'No saved entry'}
+                </strong>
+              </div>
+            </div>
+
+            <div className="tracker-day-spotlight__stats">
+              <div className="tracker-day-spotlight__stat">
+                <span className="tracker-day-spotlight__stat-label">Flow</span>
+                <strong className="tracker-day-spotlight__stat-value">
+                  {selectedEntry ? (formState.flowLevel === 'none' ? 'Logged' : formState.flowLevel) : 'Not logged'}
+                </strong>
+              </div>
+              <div className="tracker-day-spotlight__stat">
+                <span className="tracker-day-spotlight__stat-label">Cycle day</span>
+                <strong className="tracker-day-spotlight__stat-value">{formState.cycleDay || '—'}</strong>
+              </div>
+              <div className="tracker-day-spotlight__stat">
+                <span className="tracker-day-spotlight__stat-label">Phase</span>
+                <strong className="tracker-day-spotlight__stat-value">{formatPhaseName(selectedCycleInsights.phase)}</strong>
+              </div>
+              <div className="tracker-day-spotlight__stat">
+                <span className="tracker-day-spotlight__stat-label">Calendar note</span>
+                <strong className="tracker-day-spotlight__stat-value">{selectedPrediction.label || 'Saved day'}</strong>
+              </div>
+            </div>
+
+            <div className="tracker-day-spotlight__grid">
+              <div className="tracker-day-spotlight__section">
+                <span className="tracker-day-spotlight__section-label">Logged details</span>
+                <div className="tracker-day-spotlight__list">
+                  <div className="tracker-day-spotlight__row">
+                    <span>Blood</span>
+                    <strong>{formatListValue(formState.bloodColor)}</strong>
+                  </div>
+                  <div className="tracker-day-spotlight__row">
+                    <span>Clots</span>
+                    <strong>{formatListValue(formState.clots)}</strong>
+                  </div>
+                  <div className="tracker-day-spotlight__row">
+                    <span>Discharge</span>
+                    <strong>{formatListValue(formState.discharge)}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div className="tracker-day-spotlight__section">
+                <span className="tracker-day-spotlight__section-label">Body ratings</span>
+                <div className="tracker-day-spotlight__ratings">
+                  <div className="tracker-day-spotlight__rating">
+                    <span>Breast</span>
+                    <strong>{formState.breastTenderness}/10</strong>
+                  </div>
+                  <div className="tracker-day-spotlight__rating">
+                    <span>Bloating</span>
+                    <strong>{formState.bloating}/10</strong>
+                  </div>
+                  <div className="tracker-day-spotlight__rating">
+                    <span>Pelvic</span>
+                    <strong>{formState.pelvicPain}/10</strong>
+                  </div>
+                  <div className="tracker-day-spotlight__rating">
+                    <span>Systemic</span>
+                    <strong>{formState.systemicPain}/10</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -821,24 +961,24 @@ function PeriodTrackerPage() {
           onChange={(value) => updateForm({ flowLevel: value })}
         />
 
-        <SingleSelect
+        <MultiSelect
           label="Blood color"
           options={bloodColors}
-          value={formState.bloodColor}
+          values={formState.bloodColor}
           onChange={(value) => updateForm({ bloodColor: value })}
         />
 
-        <SingleSelect
+        <MultiSelect
           label="Clots"
           options={clotOptions}
-          value={formState.clots}
+          values={formState.clots}
           onChange={(value) => updateForm({ clots: value })}
         />
 
-        <SingleSelect
+        <MultiSelect
           label="Discharge"
           options={dischargeOptions}
-          value={formState.discharge}
+          values={formState.discharge}
           onChange={(value) => updateForm({ discharge: value })}
         />
 
