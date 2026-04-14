@@ -51,13 +51,12 @@ function LogDetailPage() {
   const [loadError, setLoadError] = useState('')
   const [warnings, setWarnings] = useState([])
   const sourceKey = isDemoMode ? 'demo' : 'db'
+  const hasValidEntryType = VALID_ENTRY_TYPES.includes(entryType)
 
   useEffect(() => {
     let isMounted = true
 
-    if (!VALID_ENTRY_TYPES.includes(entryType)) {
-      setLoadError('Invalid entry type.')
-      setLoadedSource(sourceKey)
+    if (!hasValidEntryType) {
       return () => { isMounted = false }
     }
 
@@ -103,10 +102,14 @@ function LogDetailPage() {
     return () => {
       isMounted = false
     }
-  }, [entryId, entryType, isDemoMode, sourceKey])
+  }, [entryId, entryType, hasValidEntryType, isDemoMode, sourceKey])
 
   if (loadedSource !== sourceKey) {
     return <LoadingSpinner />
+  }
+
+  if (!hasValidEntryType) {
+    return <ErrorState description="Invalid entry type." />
   }
 
   if (isLocked) {
