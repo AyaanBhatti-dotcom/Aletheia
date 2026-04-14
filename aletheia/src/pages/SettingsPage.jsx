@@ -65,6 +65,8 @@ function SecurityPillar({ title, body, icon }) {
 function SettingsPage() {
   const { activeTourTarget, isTourOpen } = useTour()
   const [passphrase, setPassphrase] = useState('')
+  const [showReadableExportConfirm, setShowReadableExportConfirm] = useState(false)
+  const [clearConfirmText, setClearConfirmText] = useState('')
   const [journalStatus, setJournalStatus] = useState({
     isLockEnabled: false,
     isUnlocked: false,
@@ -119,6 +121,7 @@ function SettingsPage() {
     }
 
     await enableJournalLock(passphrase)
+    setPassphrase('')
     setWarnings([])
     await refreshJournalStatus()
     setStatusMessage('Journal lock is on, and your entries are open for this session.')
@@ -134,10 +137,12 @@ function SettingsPage() {
 
     try {
       await unlockJournal(passphrase)
+      setPassphrase('')
       setWarnings([])
       await refreshJournalStatus()
       setStatusMessage('Journal opened for this session.')
     } catch {
+      setPassphrase('')
       setStatusMessage('That passphrase did not open this journal. Try again or use a different backup.')
     }
   }
@@ -180,7 +185,8 @@ function SettingsPage() {
     }
   }
 
-  async function handleReadableExport() {
+  async function handleReadableExportConfirmed() {
+    setShowReadableExportConfirm(false)
     try {
       const data = await exportReadableData()
       downloadJsonFile(data, 'aletheia-readable-export.json')
@@ -193,11 +199,9 @@ function SettingsPage() {
   }
 
   async function handleClearData() {
-    const confirmed = window.confirm(
-      'This will permanently clear all stored data. This action cannot be undone.',
-    )
-    if (!confirmed) return
+    if (clearConfirmText.trim().toLowerCase() !== 'delete my data') return
     await clearAllData()
+    setClearConfirmText('')
     setWarnings([])
     setStatusMessage('All data cleared.')
   }
@@ -205,6 +209,13 @@ function SettingsPage() {
   async function handleImportData(event) {
     const file = event.target.files?.[0]
     if (!file) return
+
+    if (file.type && file.type !== 'application/json') {
+      setWarnings([])
+      setStatusMessage('Please choose a JSON file.')
+      event.target.value = ''
+      return
+    }
 
     try {
       if (file.size > MAX_IMPORT_FILE_SIZE_BYTES) {
@@ -426,7 +437,7 @@ function SettingsPage() {
           </svg>
           Protected export
         </button>
-        <button type="button" className="btn-secondary" style={{ width: '100%', minHeight: 52 }} onClick={handleReadableExport}>
+        <button type="button" className="btn-secondary" style={{ width: '100%', minHeight: 52 }} onClick={() => setShowReadableExportConfirm(true)}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
             <polyline points="7 10 12 15 17 10" />
@@ -434,6 +445,21 @@ function SettingsPage() {
           </svg>
           Readable export
         </button>
+        {showReadableExportConfirm && (
+          <div className="card" style={{ display: 'grid', gap: '12px', border: '1px solid var(--color-warning, #c8892a)', background: 'var(--color-warning-bg, #fdf6e3)' }}>
+            <p style={{ fontSize: '13px', fontWeight: 700, margin: 0 }}>
+              This export will be fully decrypted plaintext. Anyone with the file can read all your entries without a passphrase.
+            </p>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button type="button" className="btn-primary" onClick={handleReadableExportConfirmed}>
+                Yes, export plaintext
+              </button>
+              <button type="button" className="btn-secondary" onClick={() => setShowReadableExportConfirm(false)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
       </SettingsSection>
 
       {/* Import */}
@@ -496,13 +522,30 @@ function SettingsPage() {
         title="Danger zone"
         description="These actions are permanent and cannot be undone."
       >
-        <button type="button" className="btn-danger" onClick={handleClearData}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <polyline points="3 6 5 6 21 6" />
-            <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2" />
-          </svg>
-          Clear all data
-        </button>
+        <div style={{ display: 'grid', gap: '10px' }}>
+          <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-muted)' }} htmlFor="clear-confirm">
+            Type <strong>delete my data</strong> to confirm
+          </label>
+          <input
+            id="clear-confirm"
+            type="text"
+            placeholder="delete my data"
+            value={clearConfirmText}
+            onChange={(e) => setClearConfirmText(e.target.value)}
+          />
+          <button
+            type="button"
+            className="btn-danger"
+            onClick={handleClearData}
+            disabled={clearConfirmText.trim().toLowerCase() !== 'delete my data'}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2" />
+            </svg>
+            Clear all data
+          </button>
+        </div>
       </SettingsSection>
 
       {statusMessage && (

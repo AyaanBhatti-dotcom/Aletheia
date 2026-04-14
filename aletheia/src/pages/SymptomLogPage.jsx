@@ -4,14 +4,12 @@ import ErrorState from '../components/ErrorState.jsx'
 import LockedState from '../components/LockedState.jsx'
 import LoadingSpinner from '../components/LoadingSpinner.jsx'
 import WarningNotice from '../components/WarningNotice.jsx'
-import DOMPurify from 'dompurify'
 import { JournalLockedError } from '../crypto/crypto.js'
-import { consumeJournalWarnings, getSymptomEntries, saveSymptomEntry } from '../db/db.js'
+import { consumeJournalWarnings, getUserSymptoms, getSymptomEntries, saveSymptomEntry, saveUserSymptoms } from '../db/db.js'
 import { useDemo } from '../context/DemoContext.jsx'
 import { useTour } from '../context/TourContext.jsx'
 import { symptomEntries as demoSymptomEntries } from '../demo/demoData.js'
 
-const USER_SYMPTOMS_STORAGE_KEY = 'userSymptoms'
 const MAX_PHOTO_SIZE_BYTES = 5 * 1024 * 1024
 
 const PAIN_LABELS = ['', 'Minimal', 'Mild', 'Noticeable', 'Moderate', 'Uncomfortable', 'Distressing', 'Severe', 'Intense', 'Agonizing', 'Unbearable']
@@ -47,11 +45,6 @@ function readFileAsBase64(file) {
     reader.addEventListener('error', () => reject(reader.error))
     reader.readAsDataURL(file)
   })
-}
-
-function getStoredUserSymptoms() {
-  const stored = localStorage.getItem(USER_SYMPTOMS_STORAGE_KEY)
-  return stored ? JSON.parse(stored) : []
 }
 
 function sliderBackground(value, min, max) {
@@ -92,7 +85,7 @@ function SymptomLogPage() {
   const [painScale, setPainScale] = useState(1)
   const [painTypes, setPainTypes] = useState([])
   const [bodyAreas, setBodyAreas] = useState([])
-  const [userSymptoms, setUserSymptoms] = useState(getStoredUserSymptoms)
+  const [userSymptoms, setUserSymptoms] = useState([])
   const [selectedUserSymptoms, setSelectedUserSymptoms] = useState([])
   const [newSymptom, setNewSymptom] = useState('')
   const [notes, setNotes] = useState('')
@@ -109,9 +102,11 @@ function SymptomLogPage() {
   useEffect(() => {
     let isMounted = true
     const entriesPromise = isDemoMode ? Promise.resolve(demoSymptomEntries) : getSymptomEntries()
-    entriesPromise.then((entries) => {
+    const symptomsPromise = isDemoMode ? Promise.resolve([]) : getUserSymptoms()
+    Promise.all([entriesPromise, symptomsPromise]).then(([entries, symptoms]) => {
       if (!isMounted) return
       setHasEntries(entries.length > 0)
+      setUserSymptoms(symptoms)
       setIsLocked(false)
       setLoadError('')
       setWarnings(consumeJournalWarnings())
@@ -142,12 +137,12 @@ function SymptomLogPage() {
     )
   }
 
-  function handleAddUserSymptom(event) {
+  async function handleAddUserSymptom(event) {
     event.preventDefault()
     const trimmed = newSymptom.trim()
     if (!trimmed || userSymptoms.includes(trimmed)) return
     const next = [...userSymptoms, trimmed]
-    localStorage.setItem(USER_SYMPTOMS_STORAGE_KEY, JSON.stringify(next))
+    await saveUserSymptoms(next)
     setUserSymptoms(next)
     setNewSymptom('')
   }
@@ -179,8 +174,8 @@ function SymptomLogPage() {
       painScale,
       painTypes,
       bodyAreas,
-      userSymptoms: selectedUserSymptoms.map((s) => DOMPurify.sanitize(s)),
-      notes: DOMPurify.sanitize(notes),
+      userSymptoms: selectedUserSymptoms,
+      notes,
       photo,
     })
     setHasEntries(true)

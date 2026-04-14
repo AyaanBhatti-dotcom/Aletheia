@@ -6,8 +6,10 @@ import LoadingSpinner from '../components/LoadingSpinner.jsx'
 import WarningNotice from '../components/WarningNotice.jsx'
 import { JournalLockedError } from '../crypto/crypto.js'
 import { useDemo } from '../context/DemoContext.jsx'
-import { consumeJournalWarnings, getCycleEntries, getSymptomEntries } from '../db/db.js'
+import { consumeJournalWarnings, getCycleEntries, getSymptomEntries, isSafeImageDataUrl } from '../db/db.js'
 import { cycleEntries as demoCycleEntries, symptomEntries as demoSymptomEntries } from '../demo/demoData.js'
+
+const VALID_ENTRY_TYPES = ['symptom', 'cycle']
 
 function formatDate(value, includeTime = false) {
   const date = new Date(value)
@@ -21,10 +23,6 @@ function formatDate(value, includeTime = false) {
   }
 
   return date.toLocaleDateString()
-}
-
-function isSafePhotoSource(value) {
-  return typeof value === 'string' && /^data:image\/[a-z0-9.+-]+;base64,[a-z0-9+/=\s]+$/i.test(value.trim())
 }
 
 function formatListValue(value) {
@@ -56,6 +54,12 @@ function LogDetailPage() {
 
   useEffect(() => {
     let isMounted = true
+
+    if (!VALID_ENTRY_TYPES.includes(entryType)) {
+      setLoadError('Invalid entry type.')
+      setLoadedSource(sourceKey)
+      return () => { isMounted = false }
+    }
 
     const entriesPromise = isDemoMode
       ? Promise.resolve([demoSymptomEntries, demoCycleEntries])
@@ -158,8 +162,8 @@ function LogDetailPage() {
             <DetailRow label="Body areas" value={entry.bodyAreas?.join(', ') || 'None'} />
             <DetailRow label="Custom symptoms" value={entry.userSymptoms?.join(', ') || 'None'} />
             <DetailRow label="Notes" value={entry.notes?.trim() || 'No notes'} />
-            <DetailRow label="Photo" value={isSafePhotoSource(entry.photo) ? 'Attached' : 'None'} />
-            {isSafePhotoSource(entry.photo) && (
+            <DetailRow label="Photo" value={isSafeImageDataUrl(entry.photo) ? 'Attached' : 'None'} />
+            {isSafeImageDataUrl(entry.photo) && (
               <img
                 src={entry.photo}
                 alt="Symptom log attachment"

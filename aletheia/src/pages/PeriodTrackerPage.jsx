@@ -555,6 +555,7 @@ function PeriodTrackerPage() {
   const [cycleEntries, setCycleEntries] = useState([])
   const [loadedSource, setLoadedSource] = useState('')
   const [savedKey, setSavedKey] = useState(null)
+  const [cycleDayError, setCycleDayError] = useState('')
   const [visibleMonth, setVisibleMonth] = useState(() => createMonthDate(formatTodayForDateInput()))
   const [isLocked, setIsLocked] = useState(false)
   const [loadError, setLoadError] = useState('')
@@ -642,6 +643,15 @@ function PeriodTrackerPage() {
   async function handleSubmit(event) {
     event.preventDefault()
 
+    if (formState.cycleDay !== '') {
+      const parsed = parseInt(formState.cycleDay, 10)
+      if (!Number.isInteger(parsed) || String(parsed) !== String(formState.cycleDay).trim()) {
+        setCycleDayError('Cycle day must be a whole number.')
+        return
+      }
+    }
+    setCycleDayError('')
+
     const savedEntry = await saveCycleEntry({
       id: formState.id,
       date: formState.date,
@@ -653,7 +663,7 @@ function PeriodTrackerPage() {
       bloating: formState.bloating,
       pelvicPain: formState.pelvicPain,
       systemicPain: formState.systemicPain,
-      cycleDay: formState.cycleDay === '' ? '' : Number(formState.cycleDay),
+      cycleDay: formState.cycleDay === '' ? '' : parseInt(formState.cycleDay, 10),
     })
 
     if (!isDemoMode) {
@@ -922,6 +932,11 @@ function PeriodTrackerPage() {
             value={formState.cycleDay}
             onChange={(event) => updateForm({ cycleDay: event.target.value })}
           />
+          {cycleDayError && (
+            <p style={{ fontSize: '13px', color: 'var(--color-danger, #c0392b)', fontWeight: 600, margin: 0 }}>
+              {cycleDayError}
+            </p>
+          )}
         </div>
 
         <SingleSelect

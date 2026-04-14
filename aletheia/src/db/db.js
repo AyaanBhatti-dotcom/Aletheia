@@ -16,9 +16,12 @@ const SYMPTOM_STORE = 'symptom_entries'
 const CYCLE_STORE = 'cycle_entries'
 const META_STORE = 'app_meta'
 const PROTECTION_META_KEY = 'journal-protection'
+const USER_SYMPTOMS_META_KEY = 'user-symptoms'
+const LEGACY_USER_SYMPTOMS_STORAGE_KEY = 'userSymptoms'
 const DATE_TIME_INDEX = 'dateTime'
 const PROTECTION_CHECK_TEXT = 'aletheia-journal-check'
-const SAFE_IMAGE_DATA_URL_PATTERN = /^data:image\/[a-z0-9.+-]+;base64,[a-z0-9+/=\s]+$/i
+const MAX_PHOTO_DATA_URL_LENGTH = 8 * 1024 * 1024
+const SAFE_IMAGE_DATA_URL_PATTERN = /^data:image\/[a-z0-9.+-]+;base64,[a-z0-9+/=]+$/i
 const journalWarnings = []
 
 function openDatabase() {
@@ -124,6 +127,13 @@ function addJournalWarning(message) {
   journalWarnings.push(message)
 }
 
+export function isSafeImageDataUrl(value) {
+  if (typeof value !== 'string') return false
+  const trimmed = value.trim()
+  if (trimmed.length > MAX_PHOTO_DATA_URL_LENGTH) return false
+  return SAFE_IMAGE_DATA_URL_PATTERN.test(trimmed)
+}
+
 export function consumeJournalWarnings() {
   if (journalWarnings.length === 0) {
     return []
@@ -155,17 +165,8 @@ function hasValidProtectedPayload(entry) {
 }
 
 function sanitizePhotoValue(photo) {
-  if (typeof photo !== 'string') {
-    return null
-  }
-
-  const trimmedPhoto = photo.trim()
-
-  if (!SAFE_IMAGE_DATA_URL_PATTERN.test(trimmedPhoto)) {
-    return null
-  }
-
-  return trimmedPhoto
+  if (!isSafeImageDataUrl(photo)) return null
+  return photo.trim()
 }
 
 function sanitizeEntryBeforeSave(entry) {
@@ -376,6 +377,10 @@ export async function enableJournalLock(passphrase) {
     Promise.all(cycleEntries.map((entry) => protectEntry(entry, key))),
   ])
 
+  const userSymptomsRecord = await getMetaRecord(USER_SYMPTOMS_META_KEY)
+  const plainUserSymptoms = Array.isArray(userSymptomsRecord?.value) ? userSymptomsRecord.value : []
+  const encryptedUserSymptoms = (await encryptData(key, JSON.stringify(plainUserSymptoms))).payload
+
   await rewriteStores({
     symptomEntries: protectedSymptoms,
     cycleEntries: protectedCycles,
@@ -384,6 +389,15 @@ export async function enableJournalLock(passphrase) {
       salt,
       unlockCheck,
     },
+  })
+
+  await runTransaction(META_STORE, 'readwrite', (transaction, resolve, reject) => {
+    const request = transaction.objectStore(META_STORE).put({
+      key: USER_SYMPTOMS_META_KEY,
+      value: encryptedUserSymptoms,
+    })
+    request.addEventListener('success', () => resolve())
+    request.addEventListener('error', () => reject(request.error))
   })
 
   rememberSessionKey(key)
@@ -412,6 +426,25 @@ export async function disableJournalLock() {
     symptomEntries: plainSymptoms,
     cycleEntries: plainCycles,
     protectionConfig: null,
+  })
+
+  const userSymptomsRecord = await getMetaRecord(USER_SYMPTOMS_META_KEY)
+  let plainUserSymptoms = []
+  if (userSymptomsRecord?.value) {
+    try {
+      const plaintext = await decryptData(key, userSymptomsRecord.value)
+      plainUserSymptoms = JSON.parse(plaintext)
+    } catch {
+      // decryption failure — start fresh rather than block unlock
+    }
+  }
+  await runTransaction(META_STORE, 'readwrite', (transaction, resolve, reject) => {
+    const request = transaction.objectStore(META_STORE).put({
+      key: USER_SYMPTOMS_META_KEY,
+      value: plainUserSymptoms,
+    })
+    request.addEventListener('success', () => resolve())
+    request.addEventListener('error', () => reject(request.error))
   })
 
   clearRememberedSessionKey()
@@ -446,6 +479,7 @@ export async function clearAllData() {
       transaction.objectStore(SYMPTOM_STORE).clear(),
       transaction.objectStore(CYCLE_STORE).clear(),
       transaction.objectStore(META_STORE).delete(PROTECTION_META_KEY),
+      transaction.objectStore(META_STORE).delete(USER_SYMPTOMS_META_KEY),
     ]
     let pending = requests.length
 
@@ -625,4 +659,63 @@ export async function importProtectedData(data) {
     symptomCount: symptomEntries.length,
     cycleCount: cycleEntries.length,
   }
+}
+
+export async function getUserSymptoms() {
+  const protection = await getProtectionConfig()
+  let record = await getMetaRecord(USER_SYMPTOMS_META_KEY)
+
+  // One-time migration from localStorage.
+  // Deferred when the journal is locked (no key available); runs on the next unlocked load.
+  if (!record) {
+    try {
+      const legacy = localStorage.getItem(LEGACY_USER_SYMPTOMS_STORAGE_KEY)
+      if (legacy) {
+        const parsed = JSON.parse(legacy)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          if (!protection.enabled || hasRememberedSessionKey()) {
+            const value = protection.enabled
+              ? (await encryptData(requireSessionKey(), JSON.stringify(parsed))).payload
+              : parsed
+            await runTransaction(META_STORE, 'readwrite', (transaction, resolve, reject) => {
+              const request = transaction.objectStore(META_STORE).put({ key: USER_SYMPTOMS_META_KEY, value })
+              request.addEventListener('success', () => resolve())
+              request.addEventListener('error', () => reject(request.error))
+            })
+            record = { value }
+            localStorage.removeItem(LEGACY_USER_SYMPTOMS_STORAGE_KEY)
+          }
+          // If locked, leave localStorage intact until next unlocked session.
+        } else {
+          localStorage.removeItem(LEGACY_USER_SYMPTOMS_STORAGE_KEY)
+        }
+      }
+    } catch {
+      localStorage.removeItem(LEGACY_USER_SYMPTOMS_STORAGE_KEY)
+    }
+  }
+
+  if (!record) return []
+
+  if (!protection.enabled) {
+    return Array.isArray(record.value) ? record.value : []
+  }
+
+  if (!hasRememberedSessionKey()) throw new JournalLockedError()
+
+  const plaintext = await decryptData(requireSessionKey(), record.value)
+  return JSON.parse(plaintext)
+}
+
+export async function saveUserSymptoms(symptoms) {
+  const protection = await getProtectionConfig()
+  const value = protection.enabled
+    ? (await encryptData(requireSessionKey(), JSON.stringify(symptoms))).payload
+    : symptoms
+
+  return runTransaction(META_STORE, 'readwrite', (transaction, resolve, reject) => {
+    const request = transaction.objectStore(META_STORE).put({ key: USER_SYMPTOMS_META_KEY, value })
+    request.addEventListener('success', () => resolve())
+    request.addEventListener('error', () => reject(request.error))
+  })
 }
