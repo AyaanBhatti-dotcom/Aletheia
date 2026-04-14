@@ -81,6 +81,7 @@ function SectionDivider({ title }) {
 function SymptomLogPage() {
   const { isDemoMode } = useDemo()
   const { activeTourTarget, isTourOpen } = useTour()
+  const [entryId, setEntryId] = useState(null)
   const [dateTime, setDateTime] = useState(formatNowForDateTimeInput)
   const [painScale, setPainScale] = useState(1)
   const [painTypes, setPainTypes] = useState([])
@@ -98,6 +99,7 @@ function SymptomLogPage() {
   const [loadError, setLoadError] = useState('')
   const [warnings, setWarnings] = useState([])
   const sourceKey = isDemoMode ? 'demo' : 'db'
+  const isEditingEntry = entryId !== null
 
   useEffect(() => {
     let isMounted = true
@@ -169,7 +171,8 @@ function SymptomLogPage() {
 
   async function handleSubmit(event) {
     event.preventDefault()
-    await saveSymptomEntry({
+    const savedEntry = await saveSymptomEntry({
+      id: entryId,
       dateTime,
       painScale,
       painTypes,
@@ -178,6 +181,7 @@ function SymptomLogPage() {
       notes,
       photo,
     })
+    setEntryId(savedEntry.id)
     setHasEntries(true)
     setSavedKey(Date.now())
     setTimeout(() => setSavedKey(null), 2800)
@@ -206,7 +210,7 @@ function SymptomLogPage() {
       {savedKey !== null && (
         <div className="toast" key={savedKey} role="status" aria-live="polite">
           <span className="toast__dot" aria-hidden="true">✓</span>
-          Entry saved
+          {isEditingEntry ? 'Entry updated' : 'Entry saved'}
         </div>
       )}
 
@@ -222,6 +226,17 @@ function SymptomLogPage() {
           <h1 style={{ marginBottom: '6px' }}>Symptom log</h1>
           <p style={{ fontSize: '14px', color: 'var(--color-text-muted)', fontWeight: 500 }}>
             Track what you feel, when you feel it.
+          </p>
+        </div>
+
+        <div className="card" style={{ display: 'grid', gap: '6px' }}>
+          <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            {isEditingEntry ? 'Editing saved entry' : 'New entry'}
+          </p>
+          <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-text-muted)', fontWeight: 500 }}>
+            {isEditingEntry
+              ? 'Saving now will update this log instead of creating another one.'
+              : 'Saving will create a new symptom log for this date and time.'}
           </p>
         </div>
 
@@ -384,7 +399,7 @@ function SymptomLogPage() {
             <polyline points="17 21 17 13 7 13 7 21" />
             <polyline points="7 3 7 8 15 8" />
           </svg>
-          Save entry
+          {isEditingEntry ? 'Update entry' : 'Save entry'}
         </button>
 
         <p style={{ textAlign: 'center', fontSize: '12px', color: 'var(--color-text-muted)', fontWeight: 500 }}>

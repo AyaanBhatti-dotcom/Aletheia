@@ -365,8 +365,22 @@ function getCalendarPrediction(dayKey, cycleAnalysis, hasLoggedEntry) {
   return { marker: null, label: '' }
 }
 
-function replaceEntryForDate(entries, savedEntry) {
-  const nextEntries = entries.filter((entry) => entry.date !== savedEntry.date)
+function replaceEntryForDate(entries, savedEntry, previousEntryId, previousDate) {
+  const nextEntries = entries.filter((entry) => {
+    if (previousEntryId && entry.id === previousEntryId) {
+      return false
+    }
+
+    if (previousDate && entry.date === previousDate) {
+      return false
+    }
+
+    if (entry.date === savedEntry.date) {
+      return false
+    }
+
+    return true
+  })
 
   nextEntries.push(savedEntry)
 
@@ -563,6 +577,7 @@ function PeriodTrackerPage() {
   const [warnings, setWarnings] = useState([])
   const sourceKey = isDemoMode ? 'demo' : 'db'
   const hasEntries = cycleEntries.length > 0
+  const isEditingEntry = formState.id !== null
 
   useEffect(() => {
     let isMounted = true
@@ -642,6 +657,8 @@ function PeriodTrackerPage() {
 
   async function handleSubmit(event) {
     event.preventDefault()
+    const previousEntryId = formState.id
+    const previousDate = formState.date
 
     if (formState.cycleDay !== '') {
       const parsed = parseInt(formState.cycleDay, 10)
@@ -667,7 +684,9 @@ function PeriodTrackerPage() {
     })
 
     if (!isDemoMode) {
-      setCycleEntries((currentEntries) => replaceEntryForDate(currentEntries, savedEntry))
+      setCycleEntries((currentEntries) =>
+        replaceEntryForDate(currentEntries, savedEntry, previousEntryId, previousDate),
+      )
       setFormState(getFormStateFromEntry(savedEntry, savedEntry.date))
     }
 
@@ -741,7 +760,7 @@ function PeriodTrackerPage() {
           <span className="toast__dot" aria-hidden="true">
             ✓
           </span>
-          Cycle entry saved
+          {isEditingEntry ? 'Cycle entry updated' : 'Cycle entry saved'}
         </div>
       )}
 
@@ -753,6 +772,17 @@ function PeriodTrackerPage() {
               View your month at a glance and log the day you want to update.
             </p>
           </div>
+        </div>
+
+        <div className="card" style={{ display: 'grid', gap: '6px' }}>
+          <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            {isEditingEntry ? 'Editing saved day' : 'New day entry'}
+          </p>
+          <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-text-muted)', fontWeight: 500 }}>
+            {isEditingEntry
+              ? 'Saving now will update the selected day instead of creating another cycle entry.'
+              : 'Saving will create a cycle entry for the selected day.'}
+          </p>
         </div>
 
         {!hasEntries && (
@@ -1011,7 +1041,7 @@ function PeriodTrackerPage() {
             <polyline points="17 21 17 13 7 13 7 21" />
             <polyline points="7 3 7 8 15 8" />
           </svg>
-          Save cycle entry
+          {isEditingEntry ? 'Update cycle entry' : 'Save cycle entry'}
         </button>
 
         <p
