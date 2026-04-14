@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import EmptyState from '../components/EmptyState.jsx'
 import ErrorState from '../components/ErrorState.jsx'
 import LockedState from '../components/LockedState.jsx'
@@ -601,6 +602,19 @@ function PeriodTrackerPage() {
     }
   }, [isDemoMode, sourceKey])
 
+  useEffect(() => {
+    if (!isDaySpotlightOpen) {
+      return undefined
+    }
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [isDaySpotlightOpen])
+
   const entryByDate = new Map()
   const uniqueCycleEntries = getUniqueCycleEntries(cycleEntries)
   uniqueCycleEntries.forEach((entry) => {
@@ -997,7 +1011,7 @@ function PeriodTrackerPage() {
         </p>
       </form>
 
-      {isDaySpotlightOpen && (
+      {isDaySpotlightOpen && createPortal(
         <div
           className="tracker-day-spotlight-overlay"
           role="dialog"
@@ -1113,7 +1127,8 @@ function PeriodTrackerPage() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   )
