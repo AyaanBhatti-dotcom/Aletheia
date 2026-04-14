@@ -21,6 +21,7 @@ const ONBOARDING_STORAGE_KEY = 'aletheia-onboarding-complete'
 const REPLAY_TOUR_EVENT = 'aletheia:replay-tour'
 const MAX_IMPORT_FILE_SIZE_BYTES = 5 * 1024 * 1024
 const MAX_IMPORT_RECORDS = 5000
+const PROTECTED_EXPORT_LOCK_MESSAGE = 'Turn on the journal lock before making a protected export.'
 
 function downloadJsonFile(data, filename) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
@@ -181,7 +182,7 @@ function SettingsPage() {
       setWarnings([])
       setStatusMessage('Protected export saved.')
     } catch {
-      setStatusMessage('Turn on the journal lock before making a protected export.')
+      setStatusMessage(PROTECTED_EXPORT_LOCK_MESSAGE)
     }
   }
 
@@ -437,6 +438,20 @@ function SettingsPage() {
           </svg>
           Protected export
         </button>
+        {statusMessage === PROTECTED_EXPORT_LOCK_MESSAGE && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="card"
+            style={{
+              fontSize: '13px',
+              fontWeight: 600,
+              color: 'var(--color-text-muted)',
+            }}
+          >
+            {statusMessage}
+          </div>
+        )}
         <button type="button" className="btn-secondary" style={{ width: '100%', minHeight: 52 }} onClick={() => setShowReadableExportConfirm(true)}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
@@ -548,7 +563,7 @@ function SettingsPage() {
         </div>
       </SettingsSection>
 
-      {statusMessage && (
+      {statusMessage && statusMessage !== PROTECTED_EXPORT_LOCK_MESSAGE && (
         <div
           role="status"
           aria-live="polite"
