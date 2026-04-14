@@ -872,115 +872,6 @@ function PeriodTrackerPage() {
             })}
           </div>
 
-          {isDaySpotlightOpen && (
-          <div className="tracker-day-spotlight" role="dialog" aria-label="Selected day details" aria-live="polite">
-            <div className="tracker-day-spotlight__header">
-              <div>
-                <p className="privacy-badge">
-                  {selectedEntry ? formatSavedLogLabel(selectedEntry.savedAt, selectedEntry.date) : 'Selected day'}
-                </p>
-                <h3 className="tracker-day-spotlight__title">{formatFullDate(formState.date)}</h3>
-                <p className="tracker-day-spotlight__copy">
-                  {selectedEntry
-                    ? selectedCycleInsights.cycleDay
-                      ? `Cycle day ${selectedCycleInsights.cycleDay} in your ${formatPhaseName(selectedCycleInsights.phase).toLowerCase()} phase.`
-                      : `Saved entry in your ${formatPhaseName(selectedCycleInsights.phase).toLowerCase()} phase.`
-                    : selectedPrediction.label || 'Pick any day to review what was logged or what the calendar estimates there.'}
-                </p>
-              </div>
-              <div className="tracker-day-spotlight__marker">
-                <button
-                  type="button"
-                  className="tracker-day-spotlight__close"
-                  onClick={closeDaySpotlight}
-                  aria-label="Close selected day details"
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M18 6L6 18" />
-                    <path d="M6 6l12 12" />
-                  </svg>
-                </button>
-                <span className="tracker-day-spotlight__marker-label">Status</span>
-                <strong className="tracker-day-spotlight__marker-value">
-                  {selectedEntry ? (formState.flowLevel === 'none' ? 'Saved entry' : formState.flowLevel) : 'No saved entry'}
-                </strong>
-              </div>
-            </div>
-
-            <div className="tracker-day-spotlight__stats">
-              <div className="tracker-day-spotlight__stat">
-                <span className="tracker-day-spotlight__stat-label">Flow</span>
-                <strong className="tracker-day-spotlight__stat-value">
-                  {selectedEntry ? (formState.flowLevel === 'none' ? 'Logged' : formState.flowLevel) : 'Not logged'}
-                </strong>
-              </div>
-              <div className="tracker-day-spotlight__stat">
-                <span className="tracker-day-spotlight__stat-label">Cycle day</span>
-                <strong className="tracker-day-spotlight__stat-value">{formState.cycleDay || '—'}</strong>
-              </div>
-              <div className="tracker-day-spotlight__stat">
-                <span className="tracker-day-spotlight__stat-label">Phase</span>
-                <strong className="tracker-day-spotlight__stat-value">{formatPhaseName(selectedCycleInsights.phase)}</strong>
-              </div>
-              <div className="tracker-day-spotlight__stat">
-                <span className="tracker-day-spotlight__stat-label">Calendar note</span>
-                <strong className="tracker-day-spotlight__stat-value">{selectedPrediction.label || 'Saved day'}</strong>
-              </div>
-            </div>
-
-            <div className="tracker-day-spotlight__grid">
-              <div className="tracker-day-spotlight__section">
-                <span className="tracker-day-spotlight__section-label">Logged details</span>
-                <div className="tracker-day-spotlight__list">
-                  <div className="tracker-day-spotlight__row">
-                    <span>Blood</span>
-                    <strong>{formatListValue(formState.bloodColor)}</strong>
-                  </div>
-                  <div className="tracker-day-spotlight__row">
-                    <span>Clots</span>
-                    <strong>{formatListValue(formState.clots)}</strong>
-                  </div>
-                  <div className="tracker-day-spotlight__row">
-                    <span>Discharge</span>
-                    <strong>{formatListValue(formState.discharge)}</strong>
-                  </div>
-                </div>
-              </div>
-
-              <div className="tracker-day-spotlight__section">
-                <span className="tracker-day-spotlight__section-label">Body ratings</span>
-                <div className="tracker-day-spotlight__ratings">
-                  <div className="tracker-day-spotlight__rating">
-                    <span>Breast</span>
-                    <strong>{formState.breastTenderness}/10</strong>
-                  </div>
-                  <div className="tracker-day-spotlight__rating">
-                    <span>Bloating</span>
-                    <strong>{formState.bloating}/10</strong>
-                  </div>
-                  <div className="tracker-day-spotlight__rating">
-                    <span>Pelvic</span>
-                    <strong>{formState.pelvicPain}/10</strong>
-                  </div>
-                  <div className="tracker-day-spotlight__rating">
-                    <span>Systemic</span>
-                    <strong>{formState.systemicPain}/10</strong>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          )}
         </section>
 
         <div className="card" style={{ display: 'grid', gap: '10px' }}>
@@ -1105,6 +996,125 @@ function PeriodTrackerPage() {
           🔒 Saved locally on your device
         </p>
       </form>
+
+      {isDaySpotlightOpen && (
+        <div
+          className="tracker-day-spotlight-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Selected day details"
+          aria-live="polite"
+          onClick={closeDaySpotlight}
+        >
+          <div className="tracker-day-spotlight" onClick={(event) => event.stopPropagation()}>
+            <div className="tracker-day-spotlight__header">
+              <div>
+                <p className="privacy-badge">
+                  {selectedEntry ? formatSavedLogLabel(selectedEntry.savedAt, selectedEntry.date) : 'Selected day'}
+                </p>
+                <h3 className="tracker-day-spotlight__title">{formatFullDate(formState.date)}</h3>
+                <p className="tracker-day-spotlight__copy">
+                  {selectedEntry
+                    ? selectedCycleInsights.cycleDay
+                      ? `Cycle day ${selectedCycleInsights.cycleDay} in your ${formatPhaseName(selectedCycleInsights.phase).toLowerCase()} phase.`
+                      : `Saved entry in your ${formatPhaseName(selectedCycleInsights.phase).toLowerCase()} phase.`
+                    : selectedPrediction.label || 'Pick any day to review what was logged or what the calendar estimates there.'}
+                </p>
+              </div>
+              <div className="tracker-day-spotlight__marker">
+                <button
+                  type="button"
+                  className="tracker-day-spotlight__close"
+                  onClick={closeDaySpotlight}
+                  aria-label="Close selected day details"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M18 6L6 18" />
+                    <path d="M6 6l12 12" />
+                  </svg>
+                </button>
+                <span className="tracker-day-spotlight__marker-label">Status</span>
+                <strong className="tracker-day-spotlight__marker-value">
+                  {selectedEntry ? (formState.flowLevel === 'none' ? 'Saved entry' : formState.flowLevel) : 'No saved entry'}
+                </strong>
+              </div>
+            </div>
+
+            <div className="tracker-day-spotlight__stats">
+              <div className="tracker-day-spotlight__stat">
+                <span className="tracker-day-spotlight__stat-label">Flow</span>
+                <strong className="tracker-day-spotlight__stat-value">
+                  {selectedEntry ? (formState.flowLevel === 'none' ? 'Logged' : formState.flowLevel) : 'Not logged'}
+                </strong>
+              </div>
+              <div className="tracker-day-spotlight__stat">
+                <span className="tracker-day-spotlight__stat-label">Cycle day</span>
+                <strong className="tracker-day-spotlight__stat-value">{formState.cycleDay || '—'}</strong>
+              </div>
+              <div className="tracker-day-spotlight__stat">
+                <span className="tracker-day-spotlight__stat-label">Phase</span>
+                <strong className="tracker-day-spotlight__stat-value">{formatPhaseName(selectedCycleInsights.phase)}</strong>
+              </div>
+              <div className="tracker-day-spotlight__stat">
+                <span className="tracker-day-spotlight__stat-label">Calendar note</span>
+                <strong className="tracker-day-spotlight__stat-value">{selectedPrediction.label || 'Saved day'}</strong>
+              </div>
+            </div>
+
+            <div className="tracker-day-spotlight__grid">
+              <div className="tracker-day-spotlight__section">
+                <span className="tracker-day-spotlight__section-label">Logged details</span>
+                <div className="tracker-day-spotlight__list">
+                  <div className="tracker-day-spotlight__row">
+                    <span>Blood</span>
+                    <strong>{formatListValue(formState.bloodColor)}</strong>
+                  </div>
+                  <div className="tracker-day-spotlight__row">
+                    <span>Clots</span>
+                    <strong>{formatListValue(formState.clots)}</strong>
+                  </div>
+                  <div className="tracker-day-spotlight__row">
+                    <span>Discharge</span>
+                    <strong>{formatListValue(formState.discharge)}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div className="tracker-day-spotlight__section">
+                <span className="tracker-day-spotlight__section-label">Body ratings</span>
+                <div className="tracker-day-spotlight__ratings">
+                  <div className="tracker-day-spotlight__rating">
+                    <span>Breast</span>
+                    <strong>{formState.breastTenderness}/10</strong>
+                  </div>
+                  <div className="tracker-day-spotlight__rating">
+                    <span>Bloating</span>
+                    <strong>{formState.bloating}/10</strong>
+                  </div>
+                  <div className="tracker-day-spotlight__rating">
+                    <span>Pelvic</span>
+                    <strong>{formState.pelvicPain}/10</strong>
+                  </div>
+                  <div className="tracker-day-spotlight__rating">
+                    <span>Systemic</span>
+                    <strong>{formState.systemicPain}/10</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

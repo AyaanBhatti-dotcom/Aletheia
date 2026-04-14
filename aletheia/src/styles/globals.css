@@ -1026,8 +1026,22 @@ input[type="range"]::-moz-range-thumb {
   color: rgba(255, 255, 255, 0.82);
 }
 
+.tracker-day-spotlight-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  padding: 24px;
+  background: rgba(24, 16, 33, 0.42);
+  backdrop-filter: blur(10px);
+  display: grid;
+  place-items: center;
+  animation: fade-up 180ms var(--ease);
+}
+
 .tracker-day-spotlight {
-  margin-top: 16px;
+  width: min(920px, calc(100vw - 32px));
+  max-height: min(86vh, 920px);
+  overflow: auto;
   padding: 20px;
   border-radius: 24px;
   border: 1px solid rgba(92, 61, 122, 0.12);
@@ -1638,6 +1652,7 @@ input[type="range"]::-moz-range-thumb {
   }
 
   .tracker-day-spotlight {
+    width: min(100%, calc(100vw - 24px));
     padding: 16px;
     gap: 14px;
   }
