@@ -94,7 +94,7 @@ function LogDetailPage() {
 
   if (!entry) {
     return (
-      <div style={{ width: '100%', maxWidth: '760px' }}>
+      <div className="page-shell" style={{ maxWidth: '760px' }}>
         <div className="card" style={{ display: 'grid', gap: '14px' }}>
           <h1 style={{ margin: 0 }}>Log not found</h1>
           <Link to="/logs" className="btn-secondary" style={{ width: 'fit-content' }}>
@@ -106,7 +106,7 @@ function LogDetailPage() {
   }
 
   return (
-    <div style={{ width: '100%', maxWidth: '760px', display: 'grid', gap: '20px' }}>
+    <div className="page-shell" style={{ maxWidth: '760px', display: 'grid', gap: '20px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'center' }}>
         <div>
           <h1 style={{ marginBottom: '6px' }}>

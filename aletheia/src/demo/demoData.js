@@ -1,4 +1,4 @@
-const painBodyAreas = ['pelvic pain', 'lower back', 'hip', 'leg/sciatic', 'shoulder tip']
+const painBodyAreas = ['pelvic pain', 'lower back', 'hip', 'leg/sciatic', 'shoulder']
 const digestiveBodyAreas = [
   'bloating',
   'nausea',

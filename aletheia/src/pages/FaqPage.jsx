@@ -177,7 +177,7 @@ function FaqPage() {
   const [openIndex, setOpenIndex] = useState(null)
 
   return (
-    <div style={{ width: '100%', maxWidth: '680px', display: 'grid', gap: '14px' }}>
+    <div className="page-shell" style={{ maxWidth: '680px', display: 'grid', gap: '14px' }}>
 
       <div style={{ paddingBottom: '4px' }}>
         <h1 style={{ marginBottom: '6px' }}>Doctor guide</h1>

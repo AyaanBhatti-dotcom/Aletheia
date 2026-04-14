@@ -99,7 +99,7 @@ function InsightsPage() {
 
   if (totalEntries < 7) {
     return (
-      <div style={{ width: '100%', maxWidth: '600px' }}>
+      <div className="page-shell" style={{ maxWidth: '600px' }}>
         <div style={{ paddingBottom: '4px', marginBottom: '14px' }}>
           <h1 style={{ marginBottom: '6px' }}>Insights</h1>
           <p style={{ fontSize: '14px', color: 'var(--color-text-muted)', fontWeight: 500 }}>
@@ -130,7 +130,7 @@ function InsightsPage() {
   const avgPainNum = Number(averagePain)
 
   return (
-    <div style={{ width: '100%', maxWidth: '680px', display: 'grid', gap: '14px' }}>
+    <div className="page-shell" style={{ maxWidth: '680px', display: 'grid', gap: '14px' }}>
 
       {/* Header */}
       <div style={{ paddingBottom: '4px' }}>

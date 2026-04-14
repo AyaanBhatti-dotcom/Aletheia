@@ -93,7 +93,7 @@ function LogsPage() {
   }
 
   return (
-    <div style={{ width: '100%', maxWidth: '920px', display: 'grid', gap: '20px' }}>
+    <div className="page-shell" style={{ maxWidth: '920px', display: 'grid', gap: '20px' }}>
       <div>
         <h1 style={{ marginBottom: '6px' }}>All logs</h1>
         <p style={{ color: 'var(--color-text-muted)' }}>Browse your full symptom and cycle history.</p>

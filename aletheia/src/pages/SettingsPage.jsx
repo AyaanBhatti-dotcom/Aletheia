@@ -217,7 +217,7 @@ function SettingsPage() {
   }
 
   return (
-    <div style={{ width: '100%', maxWidth: '600px', display: 'grid', gap: '14px' }}>
+    <div className="page-shell" style={{ maxWidth: '600px', display: 'grid', gap: '14px' }}>
       <div style={{ paddingBottom: '4px' }}>
         <h1 style={{ marginBottom: '6px' }}>Settings</h1>
         <p style={{ fontSize: '14px', color: 'var(--color-text-muted)', fontWeight: 500 }}>

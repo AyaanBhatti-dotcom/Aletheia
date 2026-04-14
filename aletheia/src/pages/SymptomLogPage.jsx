@@ -19,7 +19,7 @@ const painTypeOptions = ['sharp', 'dull', 'cramping', 'burning', 'stabbing', 'th
 const bodyAreaGroups = [
   {
     title: 'Pain & Pelvic',
-    options: ['pelvic pain', 'lower back', 'hip', 'leg / sciatic', 'shoulder tip'],
+    options: ['pelvic pain', 'lower back', 'hip', 'leg / sciatic', 'shoulder'],
   },
   {
     title: 'Digestive & Bladder',
@@ -188,7 +188,7 @@ function SymptomLogPage() {
   }
 
   return (
-    <div style={{ width: '100%', maxWidth: '600px' }}>
+    <div className="page-shell" style={{ maxWidth: '600px' }}>
       {savedKey !== null && (
         <div className="toast" key={savedKey} role="status" aria-live="polite">
           <span className="toast__dot" aria-hidden="true">✓</span>

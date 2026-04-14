@@ -6,7 +6,7 @@ function LockedState({
   title = 'Your journal is locked',
 }) {
   return (
-    <div className="card" style={{ display: 'grid', gap: '14px', maxWidth: '640px' }}>
+    <div className="card" style={{ display: 'grid', gap: '14px', width: '100%', maxWidth: '640px', marginInline: 'auto' }}>
       <div style={{ display: 'grid', gap: '8px' }}>
         <span className="privacy-badge" style={{ width: 'fit-content' }}>
           Locked journal

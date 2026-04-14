@@ -599,7 +599,7 @@ function PeriodTrackerPage() {
   ]
 
   return (
-    <div style={{ width: '100%', maxWidth: '860px' }}>
+    <div className="page-shell" style={{ maxWidth: '860px' }}>
       {savedKey !== null && (
         <div className="toast" key={savedKey} role="status" aria-live="polite">
           <span className="toast__dot" aria-hidden="true">
