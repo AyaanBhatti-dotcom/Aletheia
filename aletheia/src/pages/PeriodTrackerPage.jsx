@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useSearchParams } from 'react-router-dom'
 import EmptyState from '../components/EmptyState.jsx'
 import ErrorState from '../components/ErrorState.jsx'
 import LockedState from '../components/LockedState.jsx'
@@ -565,6 +566,7 @@ function ScaleField({ id, label, value, onChange }) {
 function PeriodTrackerPage() {
   const { isDemoMode } = useDemo()
   const { activeTourTarget, isTourOpen } = useTour()
+  const [searchParams] = useSearchParams()
   const [formState, setFormState] = useState(() => getDefaultFormState(formatTodayForDateInput()))
   const [cycleEntries, setCycleEntries] = useState([])
   const [loadedSource, setLoadedSource] = useState('')
@@ -578,6 +580,7 @@ function PeriodTrackerPage() {
   const sourceKey = isDemoMode ? 'demo' : 'db'
   const hasEntries = cycleEntries.length > 0
   const isEditingEntry = formState.id !== null
+  const editDate = searchParams.get('date')
 
   useEffect(() => {
     let isMounted = true
@@ -587,8 +590,13 @@ function PeriodTrackerPage() {
       if (!isMounted) {
         return
       }
+      const entryToEdit = editDate ? entries.find((entry) => entry.date === editDate) : null
 
       setCycleEntries(entries)
+      if (editDate) {
+        setFormState(getFormStateFromEntry(entryToEdit, editDate))
+        setVisibleMonth(createMonthDate(editDate))
+      }
       setIsLocked(false)
       setLoadError('')
       setWarnings(consumeJournalWarnings())
@@ -616,7 +624,7 @@ function PeriodTrackerPage() {
     return () => {
       isMounted = false
     }
-  }, [isDemoMode, sourceKey])
+  }, [editDate, isDemoMode, sourceKey])
 
   useEffect(() => {
     if (!isDaySpotlightOpen) {

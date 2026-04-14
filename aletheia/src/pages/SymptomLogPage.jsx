@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import EmptyState from '../components/EmptyState.jsx'
 import ErrorState from '../components/ErrorState.jsx'
 import LockedState from '../components/LockedState.jsx'
@@ -81,6 +82,7 @@ function SectionDivider({ title }) {
 function SymptomLogPage() {
   const { isDemoMode } = useDemo()
   const { activeTourTarget, isTourOpen } = useTour()
+  const [searchParams] = useSearchParams()
   const [entryId, setEntryId] = useState(null)
   const [dateTime, setDateTime] = useState(formatNowForDateTimeInput)
   const [painScale, setPainScale] = useState(1)
@@ -93,6 +95,7 @@ function SymptomLogPage() {
   const [photo, setPhoto] = useState(null)
   const [photoMessage, setPhotoMessage] = useState('')
   const [hasEntries, setHasEntries] = useState(false)
+  const [, setSymptomEntries] = useState([])
   const [loadedSource, setLoadedSource] = useState('')
   const [savedKey, setSavedKey] = useState(null)
   const [isLocked, setIsLocked] = useState(false)
@@ -100,6 +103,7 @@ function SymptomLogPage() {
   const [warnings, setWarnings] = useState([])
   const sourceKey = isDemoMode ? 'demo' : 'db'
   const isEditingEntry = entryId !== null
+  const editEntryId = searchParams.get('entryId')
 
   useEffect(() => {
     let isMounted = true
@@ -107,8 +111,19 @@ function SymptomLogPage() {
     const symptomsPromise = isDemoMode ? Promise.resolve([]) : getUserSymptoms()
     Promise.all([entriesPromise, symptomsPromise]).then(([entries, symptoms]) => {
       if (!isMounted) return
+      const entryToEdit = editEntryId ? entries.find((entry) => entry.id === editEntryId) : null
+      setSymptomEntries(entries)
       setHasEntries(entries.length > 0)
       setUserSymptoms(symptoms)
+      setEntryId(entryToEdit?.id || null)
+      setDateTime(entryToEdit?.dateTime || formatNowForDateTimeInput())
+      setPainScale(entryToEdit?.painScale ?? 1)
+      setPainTypes(Array.isArray(entryToEdit?.painTypes) ? entryToEdit.painTypes : [])
+      setBodyAreas(Array.isArray(entryToEdit?.bodyAreas) ? entryToEdit.bodyAreas : [])
+      setSelectedUserSymptoms(Array.isArray(entryToEdit?.userSymptoms) ? entryToEdit.userSymptoms : [])
+      setNotes(entryToEdit?.notes || '')
+      setPhoto(entryToEdit?.photo || null)
+      setPhotoMessage('')
       setIsLocked(false)
       setLoadError('')
       setWarnings(consumeJournalWarnings())
@@ -131,7 +146,7 @@ function SymptomLogPage() {
         setLoadedSource(sourceKey)
       })
     return () => { isMounted = false }
-  }, [isDemoMode, sourceKey])
+  }, [editEntryId, isDemoMode, sourceKey])
 
   function toggleValue(value, setValues) {
     setValues((current) =>
@@ -182,6 +197,11 @@ function SymptomLogPage() {
       photo,
     })
     setEntryId(savedEntry.id)
+    setSymptomEntries((currentEntries) => {
+      const nextEntries = currentEntries.filter((entry) => entry.id !== savedEntry.id)
+      nextEntries.push(savedEntry)
+      return nextEntries
+    })
     setHasEntries(true)
     setSavedKey(Date.now())
     setTimeout(() => setSavedKey(null), 2800)

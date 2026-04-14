@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import WarningNotice from '../components/WarningNotice.jsx'
-import { JournalLockedError } from '../crypto/crypto.js'
+import { JOURNAL_LOCKED_EVENT, JournalLockedError } from '../crypto/crypto.js'
 import {
   clearAllData,
   consumeJournalWarnings,
@@ -86,6 +86,18 @@ function SettingsPage() {
 
     return () => {
       isMounted = false
+    }
+  }, [])
+
+  useEffect(() => {
+    function handleAutoLock() {
+      getJournalStatus().then(setJournalStatus)
+    }
+
+    window.addEventListener(JOURNAL_LOCKED_EVENT, handleAutoLock)
+
+    return () => {
+      window.removeEventListener(JOURNAL_LOCKED_EVENT, handleAutoLock)
     }
   }, [])
 

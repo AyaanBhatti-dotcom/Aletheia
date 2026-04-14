@@ -131,7 +131,9 @@ export function isSafeImageDataUrl(value) {
   if (typeof value !== 'string') return false
   const trimmed = value.trim()
   if (trimmed.length > MAX_PHOTO_DATA_URL_LENGTH) return false
-  return SAFE_IMAGE_DATA_URL_PATTERN.test(trimmed)
+  if (!SAFE_IMAGE_DATA_URL_PATTERN.test(trimmed)) return false
+  if (/^data:image\/svg/i.test(trimmed)) return false
+  return true
 }
 
 export function consumeJournalWarnings() {
@@ -473,6 +475,7 @@ export async function getCycleEntries() {
 
 export async function clearAllData() {
   clearRememberedSessionKey()
+  localStorage.removeItem(LEGACY_USER_SYMPTOMS_STORAGE_KEY)
 
   return runTransaction([SYMPTOM_STORE, CYCLE_STORE, META_STORE], 'readwrite', (transaction, resolve, reject) => {
     const requests = [

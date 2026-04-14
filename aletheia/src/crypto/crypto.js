@@ -6,6 +6,9 @@ const SALT_LENGTH = 16
 const textEncoder = new TextEncoder()
 const textDecoder = new TextDecoder()
 let sessionKey = null
+let autoLockTimer = null
+const AUTO_LOCK_MS = 15 * 60 * 1000
+export const JOURNAL_LOCKED_EVENT = 'aletheia:journal-locked'
 
 export class JournalLockedError extends Error {
   constructor(message = 'Journal is locked.') {
@@ -79,12 +82,25 @@ export async function generateKey(passphrase, salt) {
   )
 }
 
+export function resetAutoLockTimer() {
+  if (!sessionKey) return
+  clearTimeout(autoLockTimer)
+  autoLockTimer = setTimeout(() => {
+    sessionKey = null
+    window.dispatchEvent(new Event(JOURNAL_LOCKED_EVENT))
+  }, AUTO_LOCK_MS)
+}
+
 export function rememberSessionKey(key) {
   sessionKey = key
+  resetAutoLockTimer()
 }
 
 export function clearRememberedSessionKey() {
+  clearTimeout(autoLockTimer)
+  autoLockTimer = null
   sessionKey = null
+  window.dispatchEvent(new Event(JOURNAL_LOCKED_EVENT))
 }
 
 export function hasRememberedSessionKey() {

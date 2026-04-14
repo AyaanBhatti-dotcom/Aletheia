@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import './App.css'
+import { clearRememberedSessionKey, resetAutoLockTimer } from './crypto/crypto.js'
 import { useDemo } from './context/DemoContext.jsx'
 import { TourProvider } from './context/TourContext.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
@@ -203,6 +204,34 @@ function App() {
 
     return () => {
       window.removeEventListener(REPLAY_TOUR_EVENT, handleReplayTour)
+    }
+  }, [])
+
+  useEffect(() => {
+    function handleVisibilityChange() {
+      if (document.hidden) {
+        clearRememberedSessionKey()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [])
+
+  useEffect(() => {
+    const events = ['pointerdown', 'keydown', 'scroll', 'touchstart']
+
+    function handleActivity() {
+      resetAutoLockTimer()
+    }
+
+    events.forEach((event) => window.addEventListener(event, handleActivity, { passive: true }))
+
+    return () => {
+      events.forEach((event) => window.removeEventListener(event, handleActivity))
     }
   }, [])
 

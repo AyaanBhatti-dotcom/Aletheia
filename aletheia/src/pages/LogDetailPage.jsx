@@ -152,9 +152,18 @@ function LogDetailPage() {
               : formatDate(entry.date)}
           </p>
         </div>
-        <Link to="/logs" className="btn-secondary" style={{ width: 'fit-content' }}>
-          Back to all logs
-        </Link>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <Link
+            to={entryType === 'symptom' ? `/log?entryId=${entry.id}` : `/tracker?date=${entry.date}`}
+            className="btn-primary"
+            style={{ width: 'fit-content' }}
+          >
+            Edit this {entryType === 'symptom' ? 'log' : 'day'}
+          </Link>
+          <Link to="/logs" className="btn-secondary" style={{ width: 'fit-content' }}>
+            Back to all logs
+          </Link>
+        </div>
       </div>
 
       <div className="card" style={{ display: 'grid', gap: '10px' }}>
