@@ -8,6 +8,7 @@ import { JournalLockedError } from '../crypto/crypto.js'
 import { useDemo } from '../context/DemoContext.jsx'
 import { consumeJournalWarnings, getCycleEntries, getSymptomEntries, isSafeImageDataUrl } from '../db/db.js'
 import { cycleEntries as demoCycleEntries, symptomEntries as demoSymptomEntries } from '../demo/demoData.js'
+import { formatSymptomPainSummary, getEntryPainScale, getSymptomPainLevels } from '../patterns/engine.js'
 
 const VALID_ENTRY_TYPES = ['symptom', 'cycle']
 
@@ -169,12 +170,25 @@ function LogDetailPage() {
       <div className="card" style={{ display: 'grid', gap: '10px' }}>
         {entryType === 'symptom' ? (
           <>
-            <DetailRow label="Pain score" value={`${entry.painScale}/10`} />
+            <DetailRow
+              label="Peak pain score"
+              value={Number.isFinite(getEntryPainScale(entry)) ? `${getEntryPainScale(entry)}/10` : 'Not set'}
+            />
+            <DetailRow label="Symptom pain levels" value={formatSymptomPainSummary(entry)} />
             <DetailRow label="Pain types" value={entry.painTypes?.join(', ') || 'None'} />
             <DetailRow label="Body areas" value={entry.bodyAreas?.join(', ') || 'None'} />
             <DetailRow label="Custom symptoms" value={entry.userSymptoms?.join(', ') || 'None'} />
             <DetailRow label="Notes" value={entry.notes?.trim() || 'No notes'} />
             <DetailRow label="Photo" value={isSafeImageDataUrl(entry.photo) ? 'Attached' : 'None'} />
+            {Object.keys(getSymptomPainLevels(entry)).length > 0 && (
+              <div style={{ display: 'grid', gap: '8px', marginTop: '6px' }}>
+                {Object.entries(getSymptomPainLevels(entry))
+                  .sort(([left], [right]) => left.localeCompare(right))
+                  .map(([symptom, score]) => (
+                    <DetailRow key={symptom} label={symptom} value={`${score}/10`} />
+                  ))}
+              </div>
+            )}
             {isSafeImageDataUrl(entry.photo) && (
               <img
                 src={entry.photo}

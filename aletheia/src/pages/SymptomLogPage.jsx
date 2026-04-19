@@ -10,6 +10,7 @@ import { consumeJournalWarnings, getUserSymptoms, getSymptomEntries, saveSymptom
 import { useDemo } from '../context/DemoContext.jsx'
 import { useTour } from '../context/TourContext.jsx'
 import { symptomEntries as demoSymptomEntries } from '../demo/demoData.js'
+import { getEntryPainScale, getSymptomPainLevels } from '../patterns/engine.js'
 
 const MAX_PHOTO_SIZE_BYTES = 5 * 1024 * 1024
 
@@ -55,6 +56,67 @@ function sliderBackground(value, min, max) {
   }
 }
 
+function normalizeSymptomPainLevels(levels) {
+  if (!levels || typeof levels !== 'object') {
+    return {}
+  }
+
+  return Object.entries(levels).reduce((nextLevels, [symptom, value]) => {
+    const numericValue = Math.min(Math.max(Number(value) || 1, 1), 10)
+    nextLevels[symptom] = numericValue
+    return nextLevels
+  }, {})
+}
+
+function toggleSymptomSelection(symptom, setValues, setPainLevels, fallbackPainLevel = 1) {
+  setValues((current) => {
+    const isSelected = current.includes(symptom)
+
+    setPainLevels((existing) => {
+      const nextLevels = { ...existing }
+
+      if (isSelected) {
+        delete nextLevels[symptom]
+      } else if (!nextLevels[symptom]) {
+        nextLevels[symptom] = fallbackPainLevel
+      }
+
+      return nextLevels
+    })
+
+    return isSelected ? current.filter((value) => value !== symptom) : [...current, symptom]
+  })
+}
+
+function PainLevelField({ symptom, value, onChange }) {
+  return (
+    <div className="card" style={{ display: 'grid', gap: '10px', padding: '14px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'center' }}>
+        <div>
+          <div style={{ fontSize: '14px', fontWeight: 700 }}>{symptom}</div>
+          <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', fontWeight: 600 }}>
+            {PAIN_LABELS[value]}
+          </div>
+        </div>
+        <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--color-primary)' }}>{value}</div>
+      </div>
+      <input
+        type="range"
+        min="1"
+        max="10"
+        value={value}
+        onChange={(event) => onChange(Number(event.target.value))}
+        style={sliderBackground(value, 1, 10)}
+        aria-label={`${symptom} pain level: ${value} out of 10, ${PAIN_LABELS[value]}`}
+      />
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--color-text-muted)', fontWeight: 600 }}>
+        <span>1 · Minimal</span>
+        <span>10 · Unbearable</span>
+      </div>
+    </div>
+  )
+}
+
 function PillToggle({ label, active, onToggle }) {
   return (
     <button
@@ -85,11 +147,11 @@ function SymptomLogPage() {
   const [searchParams] = useSearchParams()
   const [entryId, setEntryId] = useState(null)
   const [dateTime, setDateTime] = useState(formatNowForDateTimeInput)
-  const [painScale, setPainScale] = useState(1)
   const [painTypes, setPainTypes] = useState([])
   const [bodyAreas, setBodyAreas] = useState([])
   const [userSymptoms, setUserSymptoms] = useState([])
   const [selectedUserSymptoms, setSelectedUserSymptoms] = useState([])
+  const [symptomPainLevels, setSymptomPainLevels] = useState({})
   const [newSymptom, setNewSymptom] = useState('')
   const [notes, setNotes] = useState('')
   const [photo, setPhoto] = useState(null)
@@ -117,10 +179,10 @@ function SymptomLogPage() {
       setUserSymptoms(symptoms)
       setEntryId(entryToEdit?.id || null)
       setDateTime(entryToEdit?.dateTime || formatNowForDateTimeInput())
-      setPainScale(entryToEdit?.painScale ?? 1)
       setPainTypes(Array.isArray(entryToEdit?.painTypes) ? entryToEdit.painTypes : [])
       setBodyAreas(Array.isArray(entryToEdit?.bodyAreas) ? entryToEdit.bodyAreas : [])
       setSelectedUserSymptoms(Array.isArray(entryToEdit?.userSymptoms) ? entryToEdit.userSymptoms : [])
+      setSymptomPainLevels(normalizeSymptomPainLevels(getSymptomPainLevels(entryToEdit)))
       setNotes(entryToEdit?.notes || '')
       setPhoto(entryToEdit?.photo || null)
       setPhotoMessage('')
@@ -186,6 +248,11 @@ function SymptomLogPage() {
 
   async function handleSubmit(event) {
     event.preventDefault()
+    const painScale = getEntryPainScale({
+      bodyAreas,
+      userSymptoms: selectedUserSymptoms,
+      symptomPainLevels,
+    })
     const savedEntry = await saveSymptomEntry({
       id: entryId,
       dateTime,
@@ -193,6 +260,7 @@ function SymptomLogPage() {
       painTypes,
       bodyAreas,
       userSymptoms: selectedUserSymptoms,
+      symptomPainLevels: normalizeSymptomPainLevels(symptomPainLevels),
       notes,
       photo,
     })
@@ -206,6 +274,16 @@ function SymptomLogPage() {
     setSavedKey(Date.now())
     setTimeout(() => setSavedKey(null), 2800)
   }
+
+  const selectedSymptoms = [
+    ...bodyAreas.map((symptom) => ({ symptom, source: 'Body area' })),
+    ...selectedUserSymptoms.map((symptom) => ({ symptom, source: 'Custom symptom' })),
+  ].sort((left, right) => left.symptom.localeCompare(right.symptom))
+  const overallPainScale = getEntryPainScale({
+    bodyAreas,
+    userSymptoms: selectedUserSymptoms,
+    symptomPainLevels,
+  }) ?? 0
 
   if (loadedSource !== sourceKey) {
     return <LoadingSpinner />
@@ -280,25 +358,17 @@ function SymptomLogPage() {
           />
         </div>
 
-        {/* Pain scale */}
+        {/* Symptom pain */}
         <div className="card" style={{ display: 'grid', gap: '14px' }}>
-          <div className="field-label">Pain scale</div>
+          <div className="field-label">Symptom pain levels</div>
+          <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-text-muted)', fontWeight: 500 }}>
+            Choose symptoms first, then set each one individually.
+          </p>
           <div className="pain-display">
-            <span className="pain-display__number">{painScale}</span>
-            <span className="pain-display__label">{PAIN_LABELS[painScale]}</span>
-          </div>
-          <input
-            type="range"
-            min="1"
-            max="10"
-            value={painScale}
-            onChange={(e) => setPainScale(Number(e.target.value))}
-            style={sliderBackground(painScale, 1, 10)}
-            aria-label={`Pain scale: ${painScale} out of 10, ${PAIN_LABELS[painScale]}`}
-          />
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--color-text-muted)', fontWeight: 600 }}>
-            <span>1 · Minimal</span>
-            <span>10 · Unbearable</span>
+            <span className="pain-display__number">{overallPainScale || '—'}</span>
+            <span className="pain-display__label">
+              {overallPainScale ? `Highest symptom: ${PAIN_LABELS[overallPainScale]}` : 'Select symptoms to rate them'}
+            </span>
           </div>
         </div>
 
@@ -329,7 +399,7 @@ function SymptomLogPage() {
                     key={option}
                     label={option}
                     active={bodyAreas.includes(option)}
-                    onToggle={() => toggleValue(option, setBodyAreas)}
+                    onToggle={() => toggleSymptomSelection(option, setBodyAreas, setSymptomPainLevels, overallPainScale || 1)}
                   />
                 ))}
               </div>
@@ -348,7 +418,7 @@ function SymptomLogPage() {
                   key={symptom}
                   label={symptom}
                   active={selectedUserSymptoms.includes(symptom)}
-                  onToggle={() => toggleValue(symptom, setSelectedUserSymptoms)}
+                  onToggle={() => toggleSymptomSelection(symptom, setSelectedUserSymptoms, setSymptomPainLevels, overallPainScale || 1)}
                 />
               ))}
             </div>
@@ -378,6 +448,35 @@ function SymptomLogPage() {
               Add
             </button>
           </div>
+        </div>
+
+        {/* Individual symptom pain sliders */}
+        <div className="card" style={{ display: 'grid', gap: '14px' }}>
+          <div className="field-label">Rate each selected symptom</div>
+          {selectedSymptoms.length > 0 ? (
+            <div style={{ display: 'grid', gap: '12px' }}>
+              {selectedSymptoms.map(({ symptom, source }) => (
+                <div key={symptom} style={{ display: 'grid', gap: '6px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    {source}
+                  </div>
+                  <PainLevelField
+                    symptom={symptom}
+                    value={symptomPainLevels[symptom] || 1}
+                    onChange={(value) =>
+                      setSymptomPainLevels((current) => ({
+                        ...current,
+                        [symptom]: value,
+                      }))}
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-text-muted)' }}>
+              No symptoms selected yet.
+            </p>
+          )}
         </div>
 
         {/* Notes */}

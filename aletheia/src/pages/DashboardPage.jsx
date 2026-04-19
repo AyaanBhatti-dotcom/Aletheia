@@ -8,7 +8,7 @@ import { useDemo } from '../context/DemoContext.jsx'
 import { useTour } from '../context/TourContext.jsx'
 import { consumeJournalWarnings, getCycleEntries, getSymptomEntries } from '../db/db.js'
 import { cycleEntries as demoCycleEntries, symptomEntries as demoSymptomEntries } from '../demo/demoData.js'
-import { averagePainLast30Days } from '../patterns/engine.js'
+import { averagePainLast30Days, getEntryPainScale, getSymptomPainLevels } from '../patterns/engine.js'
 import { generateReport } from '../reports/generateReport.js'
 
 const PAIN_COLORS = ['', '#5A8C6B', '#5A8C6B', '#5A8C6B', '#D4943A', '#D4943A', '#D4943A', '#B84040', '#B84040', '#B84040', '#B84040']
@@ -248,8 +248,8 @@ function DashboardPage() {
         entryType: 'symptom',
         type: 'Symptom log',
         timestamp: entry.dateTime,
-        meta: `Pain ${entry.painScale}/10`,
-        score: entry.painScale,
+        meta: `${Object.keys(getSymptomPainLevels(entry)).length || 0} symptoms • peak ${getEntryPainScale(entry) ?? '—'}/10`,
+        score: getEntryPainScale(entry),
       })),
     ...cycleEntries
       .filter((entry) => entry.date)

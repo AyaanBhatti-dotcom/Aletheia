@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf'
-import { averagePainLast30Days, detectFlare, topSymptoms } from '../patterns/engine.js'
+import { averagePainLast30Days, detectFlare, formatSymptomPainSummary, getEntryPainScale, topSymptoms } from '../patterns/engine.js'
 
 const PAGE = {
   width: 210,
@@ -363,14 +363,14 @@ export function generateReport(symptomEntries, cycleEntries, dateRange) {
     y,
     [
       { label: 'Date', width: 36 },
-      { label: 'Pain', width: 18 },
-      { label: 'Body areas', width: 48 },
-      { label: 'Notes', width: 76 },
+      { label: 'Peak', width: 18 },
+      { label: 'Symptoms', width: 72 },
+      { label: 'Notes', width: 52 },
     ],
     symptomEntries.map((entry) => [
       formatDateTime(entry.dateTime),
-      entry.painScale ?? '—',
-      (entry.bodyAreas || []).join(', ') || '—',
+      getEntryPainScale(entry) ?? '—',
+      formatSymptomPainSummary(entry),
       entry.notes || '—',
     ]),
   )

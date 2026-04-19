@@ -26,8 +26,69 @@ function roundToOneDecimal(value) {
   return Math.round(value * 10) / 10
 }
 
+function clampPainScore(value) {
+  if (!Number.isFinite(value)) {
+    return null
+  }
+
+  return Math.min(Math.max(Math.round(value), 1), 10)
+}
+
+function getSelectedSymptomNames(entry) {
+  return [...(entry.bodyAreas || []), ...(entry.userSymptoms || [])]
+}
+
+function getLegacyPainScale(entry) {
+  return clampPainScore(entry?.painScale)
+}
+
+export function getSymptomPainLevels(entry) {
+  const selectedSymptoms = getSelectedSymptomNames(entry)
+  const configuredLevels = entry?.symptomPainLevels && typeof entry.symptomPainLevels === 'object'
+    ? entry.symptomPainLevels
+    : {}
+  const fallbackPain = getLegacyPainScale(entry)
+
+  return selectedSymptoms.reduce((levels, symptom) => {
+    const nextScore = clampPainScore(configuredLevels[symptom]) ?? fallbackPain
+
+    if (nextScore !== null) {
+      levels[symptom] = nextScore
+    }
+
+    return levels
+  }, {})
+}
+
 function getEntrySymptoms(entry) {
-  return [...(entry.painTypes || []), ...(entry.bodyAreas || []), ...(entry.userSymptoms || [])]
+  return [
+    ...(entry.painTypes || []),
+    ...Object.keys(getSymptomPainLevels(entry)),
+  ]
+}
+
+export function getEntryPainScale(entry) {
+  const symptomPainLevels = Object.values(getSymptomPainLevels(entry))
+
+  if (symptomPainLevels.length > 0) {
+    return symptomPainLevels.reduce((max, value) => (value > max ? value : max), symptomPainLevels[0])
+  }
+
+  return getLegacyPainScale(entry)
+}
+
+export function formatSymptomPainSummary(entry) {
+  const symptomPainLevels = getSymptomPainLevels(entry)
+  const symptoms = Object.keys(symptomPainLevels)
+
+  if (symptoms.length === 0) {
+    return 'No symptoms logged'
+  }
+
+  return symptoms
+    .sort((left, right) => left.localeCompare(right))
+    .map((symptom) => `${symptom} ${symptomPainLevels[symptom]}/10`)
+    .join(', ')
 }
 
 export function getCyclePhase(cycleDay) {
@@ -55,15 +116,16 @@ export function detectFlare(entries) {
 
   entries.forEach((entry) => {
     const date = toDateString(entry.dateTime)
+    const painScale = getEntryPainScale(entry)
 
-    if (!date || !Number.isFinite(entry.painScale)) {
+    if (!date || !Number.isFinite(painScale)) {
       return
     }
 
     const currentPain = dailyPain.get(date)
 
-    if (currentPain === undefined || entry.painScale > currentPain) {
-      dailyPain.set(date, entry.painScale)
+    if (currentPain === undefined || painScale > currentPain) {
+      dailyPain.set(date, painScale)
     }
   })
 
@@ -127,7 +189,7 @@ export function averagePainLast30Days(entries) {
   const datedEntries = entries
     .map((entry) => ({
       date: toDateString(entry.dateTime),
-      painScale: entry.painScale,
+      painScale: getEntryPainScale(entry),
     }))
     .filter(
       (entry) => entry.date && Number.isFinite(entry.painScale),
@@ -217,9 +279,10 @@ export function cyclePhaseSummary(symptomEntries, cycleEntries) {
   symptomEntries.forEach((entry) => {
     const date = toDateString(entry.dateTime)
     const phase = phaseByDate.get(date)
+    const painScale = getEntryPainScale(entry)
 
-    if (phase && Number.isFinite(entry.painScale)) {
-      phasePain[phase].push(entry.painScale)
+    if (phase && Number.isFinite(painScale)) {
+      phasePain[phase].push(painScale)
     }
   })
 

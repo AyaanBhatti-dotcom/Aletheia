@@ -9,6 +9,7 @@ import { useDemo } from '../context/DemoContext.jsx'
 import { useTour } from '../context/TourContext.jsx'
 import { consumeJournalWarnings, getCycleEntries, getSymptomEntries } from '../db/db.js'
 import { cycleEntries as demoCycleEntries, symptomEntries as demoSymptomEntries } from '../demo/demoData.js'
+import { getEntryPainScale, getSymptomPainLevels } from '../patterns/engine.js'
 
 function formatDate(value, includeTime = false) {
   const date = new Date(value)
@@ -52,7 +53,7 @@ function LogsPage() {
           type: 'symptom',
           title: 'Symptom log',
           timestamp: entry.dateTime,
-          summary: `Pain ${entry.painScale}/10`,
+          summary: `${Object.keys(getSymptomPainLevels(entry)).length || 0} symptoms • peak ${getEntryPainScale(entry) ?? '—'}/10`,
         })),
         ...cycleEntries.map((entry) => ({
           id: entry.id,

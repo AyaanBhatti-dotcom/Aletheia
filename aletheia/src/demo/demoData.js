@@ -316,14 +316,23 @@ function getCycleRatings(cycleDay, periodEndDay, ovulationDay, cycleLength) {
 export const symptomEntries = Array.from({ length: 60 }, (_, offset) => {
   const date = createDate(offset)
   const { cycleDay, cycleLength, ovulationDay, periodEndDay } = getCycleContext(offset)
+  const bodyAreas = getBodyAreas(cycleDay, periodEndDay, ovulationDay)
+  const userSymptoms = getUserSymptoms(cycleDay, periodEndDay, ovulationDay)
+  const painScale = getPainScore(cycleDay, periodEndDay, ovulationDay)
+  const symptomPainLevels = [...bodyAreas, ...userSymptoms].reduce((levels, symptom, index) => {
+    const nextPain = Math.max(1, Math.min(10, painScale - (index % 3)))
+    levels[symptom] = nextPain
+    return levels
+  }, {})
 
   return {
     id: `demo-symptom-${offset + 1}`,
     dateTime: formatDateTime(date),
-    painScale: getPainScore(cycleDay, periodEndDay, ovulationDay),
+    painScale,
     painTypes: getPainTypes(cycleDay, periodEndDay, ovulationDay),
-    bodyAreas: getBodyAreas(cycleDay, periodEndDay, ovulationDay),
-    userSymptoms: getUserSymptoms(cycleDay, periodEndDay, ovulationDay),
+    bodyAreas,
+    userSymptoms,
+    symptomPainLevels,
     notes: getNotes(cycleDay, periodEndDay, ovulationDay, cycleLength),
     photo: null,
   }
