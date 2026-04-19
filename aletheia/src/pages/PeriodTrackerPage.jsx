@@ -663,6 +663,12 @@ function PeriodTrackerPage() {
     setIsDaySpotlightOpen(false)
   }
 
+  function handleJournalLockState() {
+    setIsLocked(true)
+    setLoadError('')
+    setWarnings([])
+  }
+
   async function handleSubmit(event) {
     event.preventDefault()
     const previousEntryId = formState.id
@@ -677,29 +683,38 @@ function PeriodTrackerPage() {
     }
     setCycleDayError('')
 
-    const savedEntry = await saveCycleEntry({
-      id: formState.id,
-      date: formState.date,
-      flowLevel: formState.flowLevel,
-      bloodColor: formState.bloodColor,
-      clots: formState.clots,
-      discharge: formState.discharge,
-      breastTenderness: formState.breastTenderness,
-      bloating: formState.bloating,
-      pelvicPain: formState.pelvicPain,
-      systemicPain: formState.systemicPain,
-      cycleDay: formState.cycleDay === '' ? '' : parseInt(formState.cycleDay, 10),
-    })
+    try {
+      const savedEntry = await saveCycleEntry({
+        id: formState.id,
+        date: formState.date,
+        flowLevel: formState.flowLevel,
+        bloodColor: formState.bloodColor,
+        clots: formState.clots,
+        discharge: formState.discharge,
+        breastTenderness: formState.breastTenderness,
+        bloating: formState.bloating,
+        pelvicPain: formState.pelvicPain,
+        systemicPain: formState.systemicPain,
+        cycleDay: formState.cycleDay === '' ? '' : parseInt(formState.cycleDay, 10),
+      })
 
-    if (!isDemoMode) {
-      setCycleEntries((currentEntries) =>
-        replaceEntryForDate(currentEntries, savedEntry, previousEntryId, previousDate),
-      )
-      setFormState(getFormStateFromEntry(savedEntry, savedEntry.date))
+      if (!isDemoMode) {
+        setCycleEntries((currentEntries) =>
+          replaceEntryForDate(currentEntries, savedEntry, previousEntryId, previousDate),
+        )
+        setFormState(getFormStateFromEntry(savedEntry, savedEntry.date))
+      }
+
+      setSavedKey(Date.now())
+      setTimeout(() => setSavedKey(null), 2800)
+    } catch (error) {
+      if (error instanceof JournalLockedError) {
+        handleJournalLockState()
+        return
+      }
+
+      setLoadError('Something went wrong saving your cycle entry. Please try again.')
     }
-
-    setSavedKey(Date.now())
-    setTimeout(() => setSavedKey(null), 2800)
   }
 
   if (loadedSource !== sourceKey) {

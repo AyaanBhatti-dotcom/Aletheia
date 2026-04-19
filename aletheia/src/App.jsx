@@ -247,6 +247,8 @@ function App() {
     let animationFrame = null
     let animationFrameAfterScroll = null
     let resizeObserver = null
+    let scrollTimeout = null
+    let activeTargetNode = null
 
     function clearOverlay() {
       setTourOverlayStyle({
@@ -297,6 +299,22 @@ function App() {
       })
     }
 
+    function scheduleMeasurement() {
+      if (cancelled || !activeTargetNode) {
+        return
+      }
+
+      window.cancelAnimationFrame(animationFrame)
+      window.cancelAnimationFrame(animationFrameAfterScroll)
+      animationFrame = requestAnimationFrame(() => {
+        animationFrameAfterScroll = requestAnimationFrame(() => {
+          if (!cancelled && activeTargetNode?.isConnected) {
+            measureLayout(activeTargetNode)
+          }
+        })
+      })
+    }
+
     function applyTourLayout() {
       if (cancelled) {
         return false
@@ -311,6 +329,8 @@ function App() {
         return false
       }
 
+      activeTargetNode = targetNode
+
       const isMobileViewport = window.innerWidth <= 640
 
       targetNode.scrollIntoView({
@@ -319,14 +339,7 @@ function App() {
         inline: 'nearest',
       })
 
-      animationFrame = requestAnimationFrame(() => {
-        animationFrameAfterScroll = requestAnimationFrame(() => {
-          if (cancelled) {
-            return
-          }
-          measureLayout(targetNode)
-        })
-      })
+      scheduleMeasurement()
 
       resizeObserver?.disconnect()
       resizeObserver = new ResizeObserver(() => {
@@ -365,11 +378,23 @@ function App() {
 
     scheduleRetry()
     window.addEventListener('resize', scheduleRetry)
+    window.addEventListener('scroll', scheduleMeasurement, { passive: true })
+
+    function handleScrollEnd() {
+      window.clearTimeout(scrollTimeout)
+      scrollTimeout = window.setTimeout(scheduleMeasurement, 80)
+    }
+
+    window.addEventListener('scroll', handleScrollEnd, { passive: true })
 
     return () => {
       cancelled = true
+      activeTargetNode = null
       window.removeEventListener('resize', scheduleRetry)
+      window.removeEventListener('scroll', scheduleMeasurement)
+      window.removeEventListener('scroll', handleScrollEnd)
       window.clearTimeout(retryTimer)
+      window.clearTimeout(scrollTimeout)
       window.cancelAnimationFrame(animationFrame)
       window.cancelAnimationFrame(animationFrameAfterScroll)
       resizeObserver?.disconnect()

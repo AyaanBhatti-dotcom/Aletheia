@@ -216,14 +216,30 @@ function SymptomLogPage() {
     )
   }
 
+  function handleJournalLockState() {
+    setIsLocked(true)
+    setLoadError('')
+    setWarnings([])
+  }
+
   async function handleAddUserSymptom(event) {
     event.preventDefault()
     const trimmed = newSymptom.trim()
     if (!trimmed || userSymptoms.includes(trimmed)) return
     const next = [...userSymptoms, trimmed]
-    await saveUserSymptoms(next)
-    setUserSymptoms(next)
-    setNewSymptom('')
+
+    try {
+      await saveUserSymptoms(next)
+      setUserSymptoms(next)
+      setNewSymptom('')
+    } catch (error) {
+      if (error instanceof JournalLockedError) {
+        handleJournalLockState()
+        return
+      }
+
+      setLoadError('Something went wrong saving your custom symptom. Please try again.')
+    }
   }
 
   async function handlePhotoChange(event) {
@@ -253,26 +269,36 @@ function SymptomLogPage() {
       userSymptoms: selectedUserSymptoms,
       symptomPainLevels,
     })
-    const savedEntry = await saveSymptomEntry({
-      id: entryId,
-      dateTime,
-      painScale,
-      painTypes,
-      bodyAreas,
-      userSymptoms: selectedUserSymptoms,
-      symptomPainLevels: normalizeSymptomPainLevels(symptomPainLevels),
-      notes,
-      photo,
-    })
-    setEntryId(savedEntry.id)
-    setSymptomEntries((currentEntries) => {
-      const nextEntries = currentEntries.filter((entry) => entry.id !== savedEntry.id)
-      nextEntries.push(savedEntry)
-      return nextEntries
-    })
-    setHasEntries(true)
-    setSavedKey(Date.now())
-    setTimeout(() => setSavedKey(null), 2800)
+
+    try {
+      const savedEntry = await saveSymptomEntry({
+        id: entryId,
+        dateTime,
+        painScale,
+        painTypes,
+        bodyAreas,
+        userSymptoms: selectedUserSymptoms,
+        symptomPainLevels: normalizeSymptomPainLevels(symptomPainLevels),
+        notes,
+        photo,
+      })
+      setEntryId(savedEntry.id)
+      setSymptomEntries((currentEntries) => {
+        const nextEntries = currentEntries.filter((entry) => entry.id !== savedEntry.id)
+        nextEntries.push(savedEntry)
+        return nextEntries
+      })
+      setHasEntries(true)
+      setSavedKey(Date.now())
+      setTimeout(() => setSavedKey(null), 2800)
+    } catch (error) {
+      if (error instanceof JournalLockedError) {
+        handleJournalLockState()
+        return
+      }
+
+      setLoadError('Something went wrong saving your entry. Please try again.')
+    }
   }
 
   const selectedSymptoms = [
