@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import EmptyState from '../components/EmptyState.jsx'
 import ErrorState from '../components/ErrorState.jsx'
@@ -72,26 +72,6 @@ function getErrorMessage(error, fallbackMessage) {
   return error instanceof Error && error.message ? error.message : fallbackMessage
 }
 
-function toggleSymptomSelection(symptom, setValues, setPainLevels, fallbackPainLevel = 1) {
-  setValues((current) => {
-    const isSelected = current.includes(symptom)
-
-    setPainLevels((existing) => {
-      const nextLevels = { ...existing }
-
-      if (isSelected) {
-        delete nextLevels[symptom]
-      } else if (!nextLevels[symptom]) {
-        nextLevels[symptom] = fallbackPainLevel
-      }
-
-      return nextLevels
-    })
-
-    return isSelected ? current.filter((value) => value !== symptom) : [...current, symptom]
-  })
-}
-
 function PainLevelField({ symptom, value, onChange }) {
   return (
     <div className="card" style={{ display: 'grid', gap: '10px', padding: '14px' }}>
@@ -116,6 +96,33 @@ function PainLevelField({ symptom, value, onChange }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--color-text-muted)', fontWeight: 600 }}>
         <span>1 · Minimal</span>
         <span>10 · Unbearable</span>
+      </div>
+    </div>
+  )
+}
+
+function InlinePainEditor({ symptom, value, onChange, onConfirm, onRemove }) {
+  return (
+    <div
+      style={{
+        flexBasis: '100%',
+        display: 'grid',
+        gap: '10px',
+        padding: '14px',
+        marginTop: '-2px',
+        borderRadius: 'var(--radius)',
+        border: '1px solid var(--color-border)',
+        background: 'var(--color-surface-raised)',
+      }}
+    >
+      <PainLevelField symptom={symptom} value={value} onChange={onChange} />
+      <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+        <button type="button" className="btn-secondary" onClick={onRemove} style={{ minWidth: '110px' }}>
+          Remove
+        </button>
+        <button type="button" className="btn-primary" onClick={onConfirm} style={{ width: 'auto', minWidth: '110px', minHeight: '48px', padding: '12px 20px' }}>
+          OK
+        </button>
       </div>
     </div>
   )
@@ -167,6 +174,7 @@ function SymptomLogPage() {
   const [isLocked, setIsLocked] = useState(false)
   const [loadError, setLoadError] = useState('')
   const [warnings, setWarnings] = useState([])
+  const [activeSymptomEditor, setActiveSymptomEditor] = useState(null)
   const sourceKey = isDemoMode ? 'demo' : 'db'
   const isEditingEntry = entryId !== null
   const editEntryId = searchParams.get('entryId')
@@ -193,6 +201,7 @@ function SymptomLogPage() {
       setIsLocked(false)
       setLoadError('')
       setWarnings(consumeJournalWarnings())
+      setActiveSymptomEditor(null)
       setLoadedSource(sourceKey)
     })
       .catch((error) => {
@@ -218,6 +227,39 @@ function SymptomLogPage() {
     setValues((current) =>
       current.includes(value) ? current.filter((v) => v !== value) : [...current, value],
     )
+  }
+
+  function setSymptomPainLevel(symptom, value) {
+    setSymptomPainLevels((current) => ({
+      ...current,
+      [symptom]: value,
+    }))
+  }
+
+  function removeSymptomSelection(symptom, currentValues, setValues) {
+    setValues(currentValues.filter((value) => value !== symptom))
+    setSymptomPainLevels((current) => {
+      const nextLevels = { ...current }
+      delete nextLevels[symptom]
+      return nextLevels
+    })
+    setActiveSymptomEditor((current) => (current === symptom ? null : current))
+  }
+
+  function handleSymptomSelection(symptom, currentValues, setValues) {
+    const isSelected = currentValues.includes(symptom)
+
+    if (isSelected) {
+      setActiveSymptomEditor(symptom)
+      return
+    }
+
+    setValues([...currentValues, symptom])
+    setSymptomPainLevels((current) => ({
+      ...current,
+      [symptom]: current[symptom] || overallPainScale || 1,
+    }))
+    setActiveSymptomEditor(symptom)
   }
 
   function handleJournalLockState() {
@@ -305,10 +347,6 @@ function SymptomLogPage() {
     }
   }
 
-  const selectedSymptoms = [
-    ...bodyAreas.map((symptom) => ({ symptom, source: 'Body area' })),
-    ...selectedUserSymptoms.map((symptom) => ({ symptom, source: 'Custom symptom' })),
-  ].sort((left, right) => left.symptom.localeCompare(right.symptom))
   const overallPainScale = getEntryPainScale({
     bodyAreas,
     userSymptoms: selectedUserSymptoms,
@@ -425,45 +463,26 @@ function SymptomLogPage() {
               <SectionDivider title={group.title} />
               <div className="pill-group" role="group" aria-label={group.title}>
                 {group.options.map((option) => (
-                  <PillToggle
-                    key={option}
-                    label={option}
-                    active={bodyAreas.includes(option)}
-                    onToggle={() => toggleSymptomSelection(option, setBodyAreas, setSymptomPainLevels, overallPainScale || 1)}
-                  />
+                  <Fragment key={option}>
+                    <PillToggle
+                      label={option}
+                      active={bodyAreas.includes(option)}
+                      onToggle={() => handleSymptomSelection(option, bodyAreas, setBodyAreas)}
+                    />
+                    {activeSymptomEditor === option && bodyAreas.includes(option) && (
+                      <InlinePainEditor
+                        symptom={option}
+                        value={symptomPainLevels[option] || overallPainScale || 1}
+                        onChange={(value) => setSymptomPainLevel(option, value)}
+                        onConfirm={() => setActiveSymptomEditor(null)}
+                        onRemove={() => removeSymptomSelection(option, bodyAreas, setBodyAreas)}
+                      />
+                    )}
+                  </Fragment>
                 ))}
               </div>
             </div>
           ))}
-        </div>
-
-        {/* Individual symptom pain sliders */}
-        <div className="card" style={{ display: 'grid', gap: '14px' }}>
-          <div className="field-label">Rate each selected symptom</div>
-          {selectedSymptoms.length > 0 ? (
-            <div style={{ display: 'grid', gap: '12px' }}>
-              {selectedSymptoms.map(({ symptom, source }) => (
-                <div key={symptom} style={{ display: 'grid', gap: '6px' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    {source}
-                  </div>
-                  <PainLevelField
-                    symptom={symptom}
-                    value={symptomPainLevels[symptom] || 1}
-                    onChange={(value) =>
-                      setSymptomPainLevels((current) => ({
-                        ...current,
-                        [symptom]: value,
-                      }))}
-                  />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-text-muted)' }}>
-              No symptoms selected yet.
-            </p>
-          )}
         </div>
 
         {/* Custom symptoms */}
@@ -473,12 +492,22 @@ function SymptomLogPage() {
           {userSymptoms.length > 0 && (
             <div className="pill-group" role="group" aria-label="Your custom symptoms">
               {userSymptoms.map((symptom) => (
-                <PillToggle
-                  key={symptom}
-                  label={symptom}
-                  active={selectedUserSymptoms.includes(symptom)}
-                  onToggle={() => toggleSymptomSelection(symptom, setSelectedUserSymptoms, setSymptomPainLevels, overallPainScale || 1)}
-                />
+                <Fragment key={symptom}>
+                  <PillToggle
+                    label={symptom}
+                    active={selectedUserSymptoms.includes(symptom)}
+                    onToggle={() => handleSymptomSelection(symptom, selectedUserSymptoms, setSelectedUserSymptoms)}
+                  />
+                  {activeSymptomEditor === symptom && selectedUserSymptoms.includes(symptom) && (
+                    <InlinePainEditor
+                      symptom={symptom}
+                      value={symptomPainLevels[symptom] || overallPainScale || 1}
+                      onChange={(value) => setSymptomPainLevel(symptom, value)}
+                      onConfirm={() => setActiveSymptomEditor(null)}
+                      onRemove={() => removeSymptomSelection(symptom, selectedUserSymptoms, setSelectedUserSymptoms)}
+                    />
+                  )}
+                </Fragment>
               ))}
             </div>
           )}
