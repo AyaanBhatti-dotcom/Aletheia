@@ -437,6 +437,35 @@ function SymptomLogPage() {
           ))}
         </div>
 
+        {/* Individual symptom pain sliders */}
+        <div className="card" style={{ display: 'grid', gap: '14px' }}>
+          <div className="field-label">Rate each selected symptom</div>
+          {selectedSymptoms.length > 0 ? (
+            <div style={{ display: 'grid', gap: '12px' }}>
+              {selectedSymptoms.map(({ symptom, source }) => (
+                <div key={symptom} style={{ display: 'grid', gap: '6px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    {source}
+                  </div>
+                  <PainLevelField
+                    symptom={symptom}
+                    value={symptomPainLevels[symptom] || 1}
+                    onChange={(value) =>
+                      setSymptomPainLevels((current) => ({
+                        ...current,
+                        [symptom]: value,
+                      }))}
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-text-muted)' }}>
+              No symptoms selected yet.
+            </p>
+          )}
+        </div>
+
         {/* Custom symptoms */}
         <div className="card" style={{ display: 'grid', gap: '14px' }}>
           <div className="field-label">Custom symptoms</div>
@@ -478,35 +507,6 @@ function SymptomLogPage() {
               Add
             </button>
           </div>
-        </div>
-
-        {/* Individual symptom pain sliders */}
-        <div className="card" style={{ display: 'grid', gap: '14px' }}>
-          <div className="field-label">Rate each selected symptom</div>
-          {selectedSymptoms.length > 0 ? (
-            <div style={{ display: 'grid', gap: '12px' }}>
-              {selectedSymptoms.map(({ symptom, source }) => (
-                <div key={symptom} style={{ display: 'grid', gap: '6px' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    {source}
-                  </div>
-                  <PainLevelField
-                    symptom={symptom}
-                    value={symptomPainLevels[symptom] || 1}
-                    onChange={(value) =>
-                      setSymptomPainLevels((current) => ({
-                        ...current,
-                        [symptom]: value,
-                      }))}
-                  />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-text-muted)' }}>
-              No symptoms selected yet.
-            </p>
-          )}
         </div>
 
         {/* Notes */}
