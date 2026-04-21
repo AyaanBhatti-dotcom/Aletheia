@@ -352,6 +352,9 @@ function SymptomLogPage() {
     userSymptoms: selectedUserSymptoms,
     symptomPainLevels,
   }) ?? 0
+  const selectedSymptoms = [...bodyAreas, ...selectedUserSymptoms].sort((left, right) =>
+    left.localeCompare(right),
+  )
 
   if (loadedSource !== sourceKey) {
     return <LoadingSpinner />
@@ -429,15 +432,33 @@ function SymptomLogPage() {
         {/* Symptom pain */}
         <div className="card" style={{ display: 'grid', gap: '14px' }}>
           <div className="field-label">Symptom pain levels</div>
-          <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-text-muted)', fontWeight: 500 }}>
-            Choose symptoms first, then set each one individually.
-          </p>
-          <div className="pain-display">
-            <span className="pain-display__number">{overallPainScale || '—'}</span>
-            <span className="pain-display__label">
-              {overallPainScale ? `Highest symptom: ${PAIN_LABELS[overallPainScale]}` : 'Select symptoms to rate them'}
-            </span>
-          </div>
+          {selectedSymptoms.length > 0 ? (
+            <div style={{ display: 'grid', gap: '8px' }}>
+              {selectedSymptoms.map((symptom) => (
+                <div
+                  key={symptom}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    gap: '12px',
+                    padding: '10px 12px',
+                    borderRadius: 'var(--radius-sm)',
+                    background: 'var(--color-surface-raised)',
+                    border: '1px solid var(--color-border)',
+                  }}
+                >
+                  <span style={{ fontSize: '14px', fontWeight: 700 }}>{symptom}</span>
+                  <span style={{ fontSize: '14px', color: 'var(--color-text-muted)', fontWeight: 700 }}>
+                    {symptomPainLevels[symptom] || 1}/10
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-text-muted)' }}>
+              No symptoms selected yet.
+            </p>
+          )}
         </div>
 
         {/* Pain type */}
