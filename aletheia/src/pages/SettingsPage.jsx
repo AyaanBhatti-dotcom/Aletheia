@@ -23,6 +23,10 @@ const MAX_IMPORT_FILE_SIZE_BYTES = 5 * 1024 * 1024
 const MAX_IMPORT_RECORDS = 5000
 const PROTECTED_EXPORT_LOCK_MESSAGE = 'Turn on the journal lock before making a protected export.'
 
+function getErrorMessage(error, fallbackMessage) {
+  return error instanceof Error && error.message ? error.message : fallbackMessage
+}
+
 function downloadJsonFile(data, filename) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
@@ -78,11 +82,17 @@ function SettingsPage() {
   useEffect(() => {
     let isMounted = true
 
-    getJournalStatus().then((status) => {
-      if (isMounted) {
-        setJournalStatus(status)
-      }
-    })
+    getJournalStatus()
+      .then((status) => {
+        if (isMounted) {
+          setJournalStatus(status)
+        }
+      })
+      .catch((error) => {
+        if (isMounted) {
+          setStatusMessage(getErrorMessage(error, 'Something went wrong loading your journal status.'))
+        }
+      })
 
     return () => {
       isMounted = false
@@ -194,7 +204,7 @@ function SettingsPage() {
       setWarnings([])
       setStatusMessage('Protected export saved.')
     } catch {
-      setStatusMessage(PROTECTED_EXPORT_LOCK_MESSAGE)
+      setStatusMessage(getErrorMessage(undefined, PROTECTED_EXPORT_LOCK_MESSAGE))
     }
   }
 

@@ -43,6 +43,10 @@ function DetailRow({ label, value }) {
   )
 }
 
+function getErrorMessage(error, fallbackMessage) {
+  return error instanceof Error && error.message ? error.message : fallbackMessage
+}
+
 function LogDetailPage() {
   const { isDemoMode } = useDemo()
   const { entryId, entryType } = useParams()
@@ -96,7 +100,7 @@ function LogDetailPage() {
 
         setIsLocked(false)
         setWarnings([])
-        setLoadError('Something went wrong loading your data. Please try again.')
+        setLoadError(getErrorMessage(error, 'Something went wrong loading your data. Please try again.'))
         setLoadedSource(sourceKey)
       })
 

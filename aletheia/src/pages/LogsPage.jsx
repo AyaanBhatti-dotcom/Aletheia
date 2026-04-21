@@ -25,6 +25,10 @@ function formatDate(value, includeTime = false) {
   return date.toLocaleDateString()
 }
 
+function getErrorMessage(error, fallbackMessage) {
+  return error instanceof Error && error.message ? error.message : fallbackMessage
+}
+
 function LogsPage() {
   const { isDemoMode } = useDemo()
   const { activeTourTarget, isTourOpen } = useTour()
@@ -85,7 +89,7 @@ function LogsPage() {
 
         setIsLocked(false)
         setWarnings([])
-        setLoadError('Something went wrong loading your data. Please try again.')
+        setLoadError(getErrorMessage(error, 'Something went wrong loading your data. Please try again.'))
         setLoadedSource(sourceKey)
       })
 

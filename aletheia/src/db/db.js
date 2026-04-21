@@ -24,9 +24,43 @@ const MAX_PHOTO_DATA_URL_LENGTH = 8 * 1024 * 1024
 const SAFE_IMAGE_DATA_URL_PATTERN = /^data:image\/[a-z0-9.+-]+;base64,[a-z0-9+/=]+$/i
 const journalWarnings = []
 
+function formatStorageError(error, fallbackMessage = 'Local journal storage is unavailable right now.') {
+  const name = typeof error?.name === 'string' ? error.name : ''
+  const message = typeof error?.message === 'string' ? error.message : ''
+
+  if (name === 'InvalidStateError' || name === 'UnknownError') {
+    return new Error('This browser could not open the local journal database right now. Reload the page and try again.')
+  }
+
+  if (name === 'NotAllowedError' || name === 'SecurityError') {
+    return new Error('This browser is blocking local journal storage. Check private browsing, storage permissions, or site data settings and try again.')
+  }
+
+  if (name === 'QuotaExceededError') {
+    return new Error('This browser has run out of local storage space for the journal. Clear some site data or device storage and try again.')
+  }
+
+  if (name === 'AbortError') {
+    return new Error('The local journal request was interrupted. Reload the page and try again.')
+  }
+
+  if (message) {
+    return new Error(message)
+  }
+
+  return new Error(fallbackMessage)
+}
+
 function openDatabase() {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DATABASE_NAME, DATABASE_VERSION)
+    let request
+
+    try {
+      request = indexedDB.open(DATABASE_NAME, DATABASE_VERSION)
+    } catch (error) {
+      reject(formatStorageError(error))
+      return
+    }
 
     request.addEventListener('upgradeneeded', () => {
       const database = request.result
@@ -57,7 +91,7 @@ function openDatabase() {
     })
 
     request.addEventListener('error', () => {
-      reject(request.error)
+      reject(formatStorageError(request.error))
     })
   })
 }
@@ -73,12 +107,12 @@ function runTransaction(storeNames, mode, callback) {
         })
 
         transaction.addEventListener('error', () => {
-          reject(transaction.error)
+          reject(formatStorageError(transaction.error))
           database.close()
         })
 
         transaction.addEventListener('abort', () => {
-          reject(transaction.error)
+          reject(formatStorageError(transaction.error))
           database.close()
         })
 
@@ -96,7 +130,7 @@ function getStoreItems(storeName) {
     })
 
     request.addEventListener('error', () => {
-      reject(request.error)
+      reject(formatStorageError(request.error))
     })
   })
 }
@@ -110,7 +144,7 @@ function getMetaRecord(key) {
     })
 
     request.addEventListener('error', () => {
-      reject(request.error)
+      reject(formatStorageError(request.error))
     })
   })
 }
@@ -704,10 +738,24 @@ export async function getUserSymptoms() {
     return Array.isArray(record.value) ? record.value : []
   }
 
+  if (Array.isArray(record.value)) {
+    return record.value
+  }
+
   if (!hasRememberedSessionKey()) throw new JournalLockedError()
 
-  const plaintext = await decryptData(requireSessionKey(), record.value)
-  return JSON.parse(plaintext)
+  try {
+    const plaintext = await decryptData(requireSessionKey(), record.value)
+    const parsed = JSON.parse(plaintext)
+
+    if (Array.isArray(parsed)) {
+      return parsed
+    }
+  } catch {
+    addJournalWarning('Your saved custom symptoms could not be opened and were skipped.')
+  }
+
+  return []
 }
 
 export async function saveUserSymptoms(symptoms) {

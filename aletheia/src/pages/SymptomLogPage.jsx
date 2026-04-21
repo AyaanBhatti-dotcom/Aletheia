@@ -68,6 +68,10 @@ function normalizeSymptomPainLevels(levels) {
   }, {})
 }
 
+function getErrorMessage(error, fallbackMessage) {
+  return error instanceof Error && error.message ? error.message : fallbackMessage
+}
+
 function toggleSymptomSelection(symptom, setValues, setPainLevels, fallbackPainLevel = 1) {
   setValues((current) => {
     const isSelected = current.includes(symptom)
@@ -204,7 +208,7 @@ function SymptomLogPage() {
 
         setIsLocked(false)
         setWarnings([])
-        setLoadError('Something went wrong loading your data. Please try again.')
+        setLoadError(getErrorMessage(error, 'Something went wrong loading your data. Please try again.'))
         setLoadedSource(sourceKey)
       })
     return () => { isMounted = false }
@@ -238,7 +242,7 @@ function SymptomLogPage() {
         return
       }
 
-      setLoadError('Something went wrong saving your custom symptom. Please try again.')
+      setLoadError(getErrorMessage(error, 'Something went wrong saving your custom symptom. Please try again.'))
     }
   }
 
@@ -297,7 +301,7 @@ function SymptomLogPage() {
         return
       }
 
-      setLoadError('Something went wrong saving your entry. Please try again.')
+      setLoadError(getErrorMessage(error, 'Something went wrong saving your entry. Please try again.'))
     }
   }
 

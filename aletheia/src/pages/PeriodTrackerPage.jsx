@@ -454,6 +454,10 @@ function getFormStateFromEntry(entry, dateValue) {
   }
 }
 
+function getErrorMessage(error, fallbackMessage) {
+  return error instanceof Error && error.message ? error.message : fallbackMessage
+}
+
 function PillToggle({ label, active, onToggle }) {
   return (
     <button
@@ -617,7 +621,7 @@ function PeriodTrackerPage() {
 
         setIsLocked(false)
         setWarnings([])
-        setLoadError('Something went wrong loading your data. Please try again.')
+        setLoadError(getErrorMessage(error, 'Something went wrong loading your data. Please try again.'))
         setLoadedSource(sourceKey)
       })
 
@@ -713,7 +717,7 @@ function PeriodTrackerPage() {
         return
       }
 
-      setLoadError('Something went wrong saving your cycle entry. Please try again.')
+      setLoadError(getErrorMessage(error, 'Something went wrong saving your cycle entry. Please try again.'))
     }
   }
 

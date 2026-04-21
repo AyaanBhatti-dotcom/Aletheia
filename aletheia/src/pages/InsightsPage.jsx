@@ -50,6 +50,10 @@ function PhaseValue({ value }) {
   )
 }
 
+function getErrorMessage(error, fallbackMessage) {
+  return error instanceof Error && error.message ? error.message : fallbackMessage
+}
+
 function InsightsPage() {
   const { isDemoMode } = useDemo()
   const { activeTourTarget, isTourOpen } = useTour()
@@ -89,7 +93,7 @@ function InsightsPage() {
 
         setIsLocked(false)
         setWarnings([])
-        setLoadError('Something went wrong loading your data. Please try again.')
+        setLoadError(getErrorMessage(error, 'Something went wrong loading your data. Please try again.'))
         setLoadedSource(sourceKey)
       })
 
