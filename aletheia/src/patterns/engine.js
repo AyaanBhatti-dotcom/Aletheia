@@ -35,7 +35,7 @@ function clampPainScore(value) {
 }
 
 function getSelectedSymptomNames(entry) {
-  return [...(entry.bodyAreas || []), ...(entry.userSymptoms || [])]
+  return [...(entry?.bodyAreas || []), ...(entry?.userSymptoms || [])]
 }
 
 function getLegacyPainScale(entry) {
@@ -62,7 +62,7 @@ export function getSymptomPainLevels(entry) {
 
 function getEntrySymptoms(entry) {
   return [
-    ...(entry.painTypes || []),
+    ...(entry?.painTypes || []),
     ...Object.keys(getSymptomPainLevels(entry)),
   ]
 }
