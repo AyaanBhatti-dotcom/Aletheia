@@ -12,38 +12,6 @@ import { averagePainLast30Days, getEntryPainScale, getSymptomPainLevels } from '
 import { generateReport } from '../reports/generateReport.js'
 
 const PAIN_COLORS = ['', '#5A8C6B', '#5A8C6B', '#5A8C6B', '#D4943A', '#D4943A', '#D4943A', '#B84040', '#B84040', '#B84040', '#B84040']
-const ENCOURAGEMENT_BY_TIME = {
-  early: [
-    'Awake before the sun? Log now—you won\'t have to re-guess the details later.',
-    'Rough night. Pain level, where it is, whether anything helped. Done.',
-    'Doesn\'t have to be an essay. Time, a number, one sentence is enough for most visits.',
-    'Whatever hour this is, if it\'s written down, it\'s there when you need it.',
-  ],
-  morning: [
-    'Before the day runs away—anything still hanging on from yesterday?',
-    'Felt different when you woke up? Say it now, before the day smudges it.',
-    'You\'ll misremember this by your next visit unless you jot it now.',
-    'This isn\'t your whole story. You can add another entry anytime.',
-  ],
-  afternoon: [
-    'Something set you off? Rough order of events, while you still remember.',
-    'Meds, heat, food helped? Put that in—it matters when you look back.',
-    'Boring steady day? Still worth a line. You need those days for the pattern.',
-    'Two minutes now beats staring at the calendar next month going "what happened again?"',
-  ],
-  evening: [
-    'Versus this morning: better, worse, same? They always ask that one.',
-    'Did symptoms mess with food, sleep, or plans? Note it while you still remember.',
-    'Half a thought is fine. Nobody needs a polished paragraph.',
-    'Log now so you\'re not rebuilding this from scratch at 2 a.m. if it spikes.',
-  ],
-  night: [
-    'Still up? Pain level, where, which position hurts least. Enough.',
-    'Late log still counts.',
-    'Appointment soon? Skim the week—you\'ll want the details straight.',
-    'One sentence before you close the tab is enough.',
-  ],
-}
 
 function getLast90DayRange() {
   const end = new Date()
@@ -92,51 +60,6 @@ function formatDateTime(value) {
     hour: 'numeric',
     minute: '2-digit',
   })
-}
-
-function getDayOfYear(date) {
-  const startOfYear = new Date(date.getFullYear(), 0, 0)
-  const diff = date - startOfYear
-
-  return Math.floor(diff / (24 * 60 * 60 * 1000))
-}
-
-function getTimeBucket(date) {
-  const hour = date.getHours()
-
-  if (hour < 6) {
-    return { key: 'early', label: 'Early hours' }
-  }
-
-  if (hour < 12) {
-    return { key: 'morning', label: 'This morning' }
-  }
-
-  if (hour < 17) {
-    return { key: 'afternoon', label: 'This afternoon' }
-  }
-
-  if (hour < 22) {
-    return { key: 'evening', label: 'This evening' }
-  }
-
-  return { key: 'night', label: 'Tonight' }
-}
-
-function getEncouragement(totalEntriesLogged) {
-  if (totalEntriesLogged === 0) {
-    return null
-  }
-
-  const now = new Date()
-  const { key, label } = getTimeBucket(now)
-  const messages = ENCOURAGEMENT_BY_TIME[key]
-  const messageIndex = (getDayOfYear(now) + totalEntriesLogged) % messages.length
-
-  return {
-    label,
-    message: messages[messageIndex],
-  }
 }
 
 function PainDot({ score }) {
@@ -266,7 +189,6 @@ function DashboardPage() {
     .slice(0, 7)
 
   const avgPain = averagePainLast30Days(symptomEntries)
-  const encouragement = getEncouragement(totalEntriesLogged)
 
   return (
     <div className="landing-shell">
@@ -281,13 +203,6 @@ function DashboardPage() {
           <p className="landing-copy">
             Record pain, bleeding, and cycle details locally. Use your timeline for yourself or to prepare for appointments—nothing is uploaded unless you export it.
           </p>
-
-          {encouragement && (
-            <div className="landing-encouragement" aria-live="polite">
-              <span className="landing-encouragement__label">{encouragement.label}</span>
-              <p className="landing-encouragement__message">{encouragement.message}</p>
-            </div>
-          )}
 
           <div className="landing-actions">
             <Link to="/log" className="btn-primary landing-actions__primary">
