@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import EmptyState from '../components/EmptyState.jsx'
 import ErrorState from '../components/ErrorState.jsx'
@@ -74,7 +74,7 @@ function getErrorMessage(error, fallbackMessage) {
 
 function PainLevelField({ symptom, value, onChange }) {
   return (
-    <div className="card" style={{ display: 'grid', gap: '10px', padding: '14px' }}>
+    <div style={{ display: 'grid', gap: '10px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'center' }}>
         <div>
           <div style={{ fontSize: '14px', fontWeight: 700 }}>{symptom}</div>
@@ -105,14 +105,13 @@ function InlinePainEditor({ symptom, value, onChange, onConfirm, onRemove }) {
   return (
     <div
       style={{
-        flexBasis: '100%',
         display: 'grid',
         gap: '10px',
-        padding: '14px',
-        marginTop: '-2px',
+        padding: '14px 16px 16px',
         borderRadius: 'var(--radius)',
         border: '1px solid var(--color-border)',
         background: 'var(--color-surface-raised)',
+        boxShadow: 'var(--shadow-xs)',
       }}
     >
       <PainLevelField symptom={symptom} value={value} onChange={onChange} />
@@ -138,6 +137,73 @@ function PillToggle({ label, active, onToggle }) {
     >
       {label}
     </button>
+  )
+}
+
+function SymptomChoiceRow({ label, selected, score, isEditing, onToggle, onChangeScore, onConfirm, onRemove }) {
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gap: '10px',
+        padding: '12px',
+        borderRadius: 'var(--radius)',
+        border: `1px solid ${isEditing ? 'var(--color-primary-light)' : 'var(--color-border)'}`,
+        background: isEditing ? 'color-mix(in srgb, var(--color-surface) 84%, var(--color-accent) 16%)' : 'var(--color-surface)',
+        transition: 'border-color var(--ease), background var(--ease), box-shadow var(--ease)',
+        boxShadow: isEditing ? '0 6px 22px rgba(63, 42, 86, 0.12)' : 'none',
+      }}
+    >
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-pressed={selected}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '12px',
+          width: '100%',
+          padding: 0,
+          background: 'transparent',
+          color: 'inherit',
+          border: 'none',
+          textAlign: 'left',
+        }}
+      >
+        <span style={{ display: 'grid', gap: '2px' }}>
+          <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-text)' }}>{label}</span>
+          <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', fontWeight: 600 }}>
+            {selected ? `${score}/10 · tap to adjust` : 'Tap to add and rate'}
+          </span>
+        </span>
+        <span
+          style={{
+            flexShrink: 0,
+            minWidth: '76px',
+            padding: '8px 12px',
+            borderRadius: 'var(--radius-pill)',
+            background: selected ? 'var(--color-primary)' : 'var(--color-surface-raised)',
+            color: selected ? '#fff' : 'var(--color-text-muted)',
+            border: `1px solid ${selected ? 'var(--color-primary)' : 'var(--color-border)'}`,
+            fontSize: '12px',
+            fontWeight: 700,
+            textAlign: 'center',
+          }}
+        >
+          {selected ? `${score}/10` : 'Add'}
+        </span>
+      </button>
+      {isEditing && selected && (
+        <InlinePainEditor
+          symptom={label}
+          value={score}
+          onChange={onChangeScore}
+          onConfirm={onConfirm}
+          onRemove={onRemove}
+        />
+      )}
+    </div>
   )
 }
 
@@ -482,24 +548,19 @@ function SymptomLogPage() {
           {bodyAreaGroups.map((group) => (
             <div key={group.title} style={{ display: 'grid', gap: '10px' }}>
               <SectionDivider title={group.title} />
-              <div className="pill-group" role="group" aria-label={group.title}>
+              <div style={{ display: 'grid', gap: '10px' }} role="group" aria-label={group.title}>
                 {group.options.map((option) => (
-                  <Fragment key={option}>
-                    <PillToggle
-                      label={option}
-                      active={bodyAreas.includes(option)}
-                      onToggle={() => handleSymptomSelection(option, bodyAreas, setBodyAreas)}
-                    />
-                    {activeSymptomEditor === option && bodyAreas.includes(option) && (
-                      <InlinePainEditor
-                        symptom={option}
-                        value={symptomPainLevels[option] || overallPainScale || 1}
-                        onChange={(value) => setSymptomPainLevel(option, value)}
-                        onConfirm={() => setActiveSymptomEditor(null)}
-                        onRemove={() => removeSymptomSelection(option, bodyAreas, setBodyAreas)}
-                      />
-                    )}
-                  </Fragment>
+                  <SymptomChoiceRow
+                    key={option}
+                    label={option}
+                    selected={bodyAreas.includes(option)}
+                    score={symptomPainLevels[option] || overallPainScale || 1}
+                    isEditing={activeSymptomEditor === option}
+                    onToggle={() => handleSymptomSelection(option, bodyAreas, setBodyAreas)}
+                    onChangeScore={(value) => setSymptomPainLevel(option, value)}
+                    onConfirm={() => setActiveSymptomEditor(null)}
+                    onRemove={() => removeSymptomSelection(option, bodyAreas, setBodyAreas)}
+                  />
                 ))}
               </div>
             </div>
@@ -511,24 +572,19 @@ function SymptomLogPage() {
           <div className="field-label">Custom symptoms</div>
 
           {userSymptoms.length > 0 && (
-            <div className="pill-group" role="group" aria-label="Your custom symptoms">
+            <div style={{ display: 'grid', gap: '10px' }} role="group" aria-label="Your custom symptoms">
               {userSymptoms.map((symptom) => (
-                <Fragment key={symptom}>
-                  <PillToggle
-                    label={symptom}
-                    active={selectedUserSymptoms.includes(symptom)}
-                    onToggle={() => handleSymptomSelection(symptom, selectedUserSymptoms, setSelectedUserSymptoms)}
-                  />
-                  {activeSymptomEditor === symptom && selectedUserSymptoms.includes(symptom) && (
-                    <InlinePainEditor
-                      symptom={symptom}
-                      value={symptomPainLevels[symptom] || overallPainScale || 1}
-                      onChange={(value) => setSymptomPainLevel(symptom, value)}
-                      onConfirm={() => setActiveSymptomEditor(null)}
-                      onRemove={() => removeSymptomSelection(symptom, selectedUserSymptoms, setSelectedUserSymptoms)}
-                    />
-                  )}
-                </Fragment>
+                <SymptomChoiceRow
+                  key={symptom}
+                  label={symptom}
+                  selected={selectedUserSymptoms.includes(symptom)}
+                  score={symptomPainLevels[symptom] || overallPainScale || 1}
+                  isEditing={activeSymptomEditor === symptom}
+                  onToggle={() => handleSymptomSelection(symptom, selectedUserSymptoms, setSelectedUserSymptoms)}
+                  onChangeScore={(value) => setSymptomPainLevel(symptom, value)}
+                  onConfirm={() => setActiveSymptomEditor(null)}
+                  onRemove={() => removeSymptomSelection(symptom, selectedUserSymptoms, setSelectedUserSymptoms)}
+                />
               ))}
             </div>
           )}
